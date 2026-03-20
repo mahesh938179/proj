@@ -1,0 +1,131 @@
+<!-- templates/history.html -->
+{% extends 'base.html' %}
+{% load stock_filters %}
+
+{% block page_title %}
+    <a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
+        <i class="fas fa-chevron-left"></i> Back to Dashboard
+    </a>
+    <span class="ms-1">Prediction History</span>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">
+            <i class="fas fa-history me-2"></i>History
+        </h4>
+
+        <!-- Filters -->
+        <form class="d-flex gap-2" method="GET">
+            <select name="stock" class="form-select form-select-sm"
+                    style="width:auto;">
+                <option value="">All Stocks</option>
+                {% for stock in stocks %}
+                <option value="{{ stock.symbol }}"
+                        {% if selected_stock == stock.symbol %}selected{% endif %}>
+                    {{ stock.symbol }}
+                </option>
+                {% endfor %}
+            </select>
+            <select name="days" class="form-select form-select-sm"
+                    style="width:auto;">
+                <option value="7" {% if days == 7 %}selected{% endif %}>
+                    7 days
+                </option>
+                <option value="30" {% if days == 30 %}selected{% endif %}>
+                    30 days
+                </option>
+                <option value="90" {% if days == 90 %}selected{% endif %}>
+                    90 days
+                </option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="fas fa-filter"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Accuracy Summary -->
+    <div class="row mb-4">
+        {% for item in accuracy_summary %}
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body py-3">
+                    <h6 class="mb-1"
+                        style="color: {{ item.stock.color }}">
+                        {{ item.stock.symbol }}
+                    </h6>
+                    <h3 class="mb-0 {% if item.accuracy >= 60 %}text-success{% elif item.accuracy >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ item.accuracy }}%
+                    </h3>
+                    <small class="text-muted">
+                        {{ item.correct }}/{{ item.total }} correct
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- History Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Stock</th>
+                            <th>Pred Date</th>
+                            <th>Close</th>
+                            <th>Predicted</th>
+                            <th>Return %</th>
+                            <th>Direction</th>
+                            <th>Confidence</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in predictions %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'predictions:stock_detail' p.stock.symbol %}"
+                                   class="text-decoration-none"
+                                   style="color: {{ p.stock.color }}">
+                                    {{ p.stock.symbol }}
+                                </a>
+                            </td>
+                            <td>{{ p.prediction_date }}</td>
+                            <td>₹{{ p.today_close|floatformat:2 }}</td>
+                            <td class="fw-bold">
+                                ₹{{ p.mmganhpa_price|floatformat:2 }}
+                            </td>
+                            <td style="{{ p.mmganhpa_return_pct|pct_color }}">
+                                {{ p.mmganhpa_return_pct|floatformat:2 }}%
+                            </td>
+                            <td style="color:{{ p.direction_color }}">
+                                {{ p.direction_icon }} {{ p.direction }}
+                            </td>
+                            <td>
+                                {% autoescape off %}
+                                {{ p.confidence|confidence_badge }}
+                                {% endautoescape %}
+                            </td>
+                            <td class="text-muted small">
+                                {{ p.created_at|date:"d M H:i" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                No predictions found
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

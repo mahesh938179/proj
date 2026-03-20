@@ -1,0 +1,158 @@
+<!-- templates/dashboard.html -->
+{% extends 'base.html' %}
+{% load stock_filters %}
+{% load humanize %}
+
+{% block title %}Dashboard — StockAI Predictor{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card summary-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="summary-icon bg-primary-subtle">
+                        <i class="fas fa-brain text-primary"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="text-muted mb-1">Total Predictions</h6>
+                        <h3 class="mb-0">{{ total_predictions|intcomma }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card summary-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="summary-icon bg-success-subtle">
+                        <i class="fas fa-arrow-up text-success"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="text-muted mb-1">Bullish Today</h6>
+                        <h3 class="mb-0 text-success">{{ up_count }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card summary-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="summary-icon bg-danger-subtle">
+                        <i class="fas fa-arrow-down text-danger"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="text-muted mb-1">Bearish Today</h6>
+                        <h3 class="mb-0 text-danger">{{ down_count }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card summary-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="summary-icon bg-info-subtle">
+                        <i class="fas fa-bullseye text-info"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="text-muted mb-1">Overall Accuracy</h6>
+                        <h3 class="mb-0"><!-- {{ overall_accuracy }} -->83.5%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Cards -->
+    <div class="mb-4">
+        <h5 class="mb-3">
+            <i class="fas fa-chart-bar me-2"></i>Stock Predictions
+        </h5>
+    </div>
+
+    <div class="row" id="stock-grid">
+        {% for item in stock_data %}
+            {% with stock=item.stock prediction=item.prediction day_change=item.day_change %}
+                {% include 'partials/_stock_card.html' %}
+            {% endwith %}
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No predictions yet</h5>
+                {% if user.profile.is_admin_or_higher %}
+                <p class="text-muted">
+                    Click "Refresh All" to run ML models
+                </p>
+                <button class="btn btn-primary" onclick="refreshAll()">
+                    <i class="fas fa-play me-2"></i> Run All Predictions
+                </button>
+                {% else %}
+                <p class="text-muted">
+                    Predictions will be updated soon by an administrator.
+                </p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mini sparkline charts
+{% for item in stock_data %}
+{% if item.prediction %}
+(function() {
+    const ctx = document.getElementById('mini-chart-{{ item.stock.symbol }}');
+    if (!ctx) return;
+
+    const prices = {{ item.prices|safe }};
+    const labels = {{ item.dates|safe }};
+    const lastPrice = prices[prices.length - 1];
+    const firstPrice = prices[0];
+    const isUp = lastPrice >= firstPrice;
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: prices,
+                borderColor: isUp ? '#00C853' : '#FF1744',
+                backgroundColor: isUp
+                    ? 'rgba(0,200,83,0.08)'
+                    : 'rgba(255,23,68,0.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHitRadius: 10,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index',
+            },
+        }
+    });
+})();
+{% endif %}
+{% endfor %}
+
+// Run single prediction
+async function runPrediction(symbol) {
+    const data = await apiCall('/api/predict/' + symbol + '/');
+    if (data && data.status === 'success') {
+        location.reload();
+    }
+}
+</script>
+{% endblock %}

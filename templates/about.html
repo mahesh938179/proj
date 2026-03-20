@@ -1,0 +1,152 @@
+<!-- templates/about.html -->
+{% extends 'base.html' %}
+
+{% block title %}About — StockAI Predictor{% endblock %}
+
+{% block page_title %}
+    <a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
+        <i class="fas fa-chevron-left"></i> Back to Dashboard
+    </a>
+    <span class="ms-1">About the Project</span>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body p-5">
+                    <h2 class="mb-4">
+                        <i class="fas fa-brain text-primary me-2"></i>
+                        StockAI Predictor v2
+                    </h2>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Disclaimer:</strong> This tool is for
+                        educational and research purposes only.
+                        Not financial advice. Always do your own research.
+                    </div>
+
+                    <h5 class="mt-4 mb-3">🏗️ Architecture</h5>
+                    <div class="card bg-dark mb-4">
+                        <div class="card-body font-mono small">
+<pre class="mb-0 text-light">
+Input Data (90 days OHLCV)
+    │
+    ├── Feature Extraction (40+ technical indicators)
+    │       │
+    │       ├── Stacked Autoencoder (dimensionality reduction)
+    │       │
+    │       └── Feature Selection (information gain)
+    │
+    ├── GAN-HPA Model (Generator predicts, Discriminator validates)
+    │
+    ├── MM-HPA Model (ARIMA + Linear Regression + LSTM)
+    │
+    └── MMGAN-HPA Ensemble (weighted blend)
+            │
+            ├── 5-day Rolling Average Return (noise reduction)
+            │
+            ├── Calibration (match prediction std to actual std)
+            │
+            └── Tomorrow Price = Today × (1 + calibrated_return)
+</pre>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3">📊 Models</h5>
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Method</th>
+                                <th>5-Day Direction Accuracy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>MMHPA</td>
+                                <td>ARIMA + LR + LSTM Ensemble</td>
+                                <td>~75%</td>
+                            </tr>
+                            <tr>
+                                <td>GANHPA</td>
+                                <td>GAN Generator + Feature Selection</td>
+                                <td>~77%</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>MMGANHPA</strong></td>
+                                <td>Weighted Ensemble (Best)</td>
+                                <td><strong>~79.6%</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h5 class="mt-4 mb-3">🔧 v1 → v2 Fixes</h5>
+                    <table class="table table-dark">
+                        <thead>
+                            <tr><th>v1 Issue</th><th>v2 Fix</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1-day return contradicted 5-day trend</td>
+                                <td>Only 5-day avg return used</td>
+                            </tr>
+                            <tr>
+                                <td>MMHPA predicted extreme returns (±5%)</td>
+                                <td>Calibrated + clipped to ±5%</td>
+                            </tr>
+                            <tr>
+                                <td>Absolute price predictions (off by ₹100s)</td>
+                                <td>Return-based: price × (1 + return)</td>
+                            </tr>
+                            <tr>
+                                <td>No confidence indicator</td>
+                                <td>3-model agreement → HIGH/LOW</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h5 class="mt-4 mb-3">📈 Covered Stocks</h5>
+                    <div class="row">
+                        {% for stock in all_stocks %}
+                        <div class="col-md-4 col-6 mb-3">
+                            <div class="card bg-dark border-0">
+                                <div class="card-body py-2 d-flex
+                                            align-items-center gap-2">
+                                    <span class="stock-dot-lg"
+                                          style="background:{{ stock.color }}">
+                                    </span>
+                                    <div>
+                                        <strong>{{ stock.symbol }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ stock.sector }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <h5 class="mt-4 mb-3">⚙️ Tech Stack</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge bg-primary">Django 5</span>
+                        <span class="badge bg-danger">TensorFlow</span>
+                        <span class="badge bg-success">XGBoost</span>
+                        <span class="badge bg-info">LSTM</span>
+                        <span class="badge bg-warning text-dark">GAN</span>
+                        <span class="badge bg-secondary">ARIMA</span>
+                        <span class="badge bg-primary">Chart.js</span>
+                        <span class="badge bg-secondary">Bootstrap 5</span>
+                        <span class="badge bg-info">yfinance</span>
+                        <span class="badge bg-success">NumPy/Pandas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

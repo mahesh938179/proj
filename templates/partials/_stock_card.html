@@ -1,0 +1,102 @@
+<!-- templates/partials/_stock_card.html -->
+{% load stock_filters %}
+<div class="col-xl-4 col-lg-6 col-md-6 mb-4 stock-card-wrapper" 
+     data-symbol="{{ stock.symbol }}"
+     data-target-price="{{ prediction.mmganhpa_price|stringformat:".2f" }}">
+    <div class="card stock-card h-100"
+         onclick="window.location='{% url 'predictions:stock_detail' stock.symbol %}'"
+         style="cursor:pointer; border-left: 4px solid {{ stock.color }};">
+
+        <div class="card-body">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h5 class="card-title mb-0">
+                        <span class="stock-dot-lg" style="background:{{ stock.color }}"></span>
+                        {{ stock.symbol }}
+                    </h5>
+                    <small class="text-muted">{{ stock.name }}</small>
+                </div>
+                <span class="badge sector-badge" style="background: {{ stock.color }}20;
+                      color: {{ stock.color }}">
+                    {{ stock.sector }}
+                </span>
+            </div>
+
+            {% if prediction %}
+            <!-- Current Price -->
+            <div class="price-section mb-3">
+                <div class="current-price">
+                    ₹{{ prediction.today_close|floatformat:2 }}
+                </div>
+                <div class="price-change" style="{{ day_change|pct_color }}">
+                    {% if day_change > 0 %}▲{% elif day_change < 0 %}▼{% else %}▬{% endif %}
+                    {{ day_change|abs_val }}%
+                    <small class="text-muted ms-1">today</small>
+                </div>
+            </div>
+
+            <!-- Prediction -->
+            <div class="prediction-section p-3 rounded-3 mb-3"
+                 style="background: {{ prediction.direction_color }}10;
+                        border: 1px solid {{ prediction.direction_color }}30;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted d-block">Tomorrow Prediction</small>
+                        <span class="predicted-price">
+                            ₹{{ prediction.mmganhpa_price|floatformat:2 }}
+                        </span>
+                    </div>
+                    <div class="text-end">
+                        <span class="direction-badge predicted-return"
+                              style="color: {{ prediction.direction_color }}">
+                            {{ prediction.direction_icon }}
+                            {{ prediction.mmganhpa_return_pct|floatformat:2 }}%
+                        </span>
+                        <br>
+                        {% autoescape off %}
+                        {{ prediction.confidence|confidence_badge }}
+                        {% endautoescape %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini chart -->
+            <div class="mini-chart-container">
+                <canvas id="mini-chart-{{ stock.symbol }}"
+                        height="60"></canvas>
+            </div>
+
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-robot fa-2x text-muted mb-2"></i>
+                <p class="text-muted mb-2">No predictions yet</p>
+                {% if user.profile.is_admin_or_higher %}
+                <button class="btn btn-sm btn-outline-primary"
+                        onclick="event.stopPropagation(); runPrediction('{{ stock.symbol }}')">
+                    <i class="fas fa-play me-1"></i> Run Prediction
+                </button>
+                {% else %}
+                <small class="text-muted fst-italic">Waiting for admin...</small>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+            <small class="text-muted">
+                {% if prediction %}
+                    <i class="fas fa-calendar me-1"></i>
+                    Predicting: {{ prediction.prediction_date }}
+                {% endif %}
+            </small>
+            <small>
+                <a href="{% url 'predictions:stock_detail' stock.symbol %}"
+                   class="text-primary text-decoration-none"
+                   onclick="event.stopPropagation()">
+                    Details <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </small>
+        </div>
+    </div>
+</div>

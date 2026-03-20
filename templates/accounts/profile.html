@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile | StockAI Predictor{% endblock %}
+
+{% block page_title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-card {
+        background: rgba(30, 34, 45, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+    .form-control {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        padding: 0.8rem 1rem;
+        border-radius: 10px;
+    }
+    .btn-save {
+        background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+    .btn-password {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .btn-password:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    .role-badge {
+        padding: 0.3rem 0.7rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .role-superadmin { background: rgba(255, 152, 0, 0.2); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.3); }
+    .role-admin { background: rgba(33, 150, 243, 0.2); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.3); }
+    .role-user { background: rgba(76, 175, 80, 0.2); color: #4CAF50; border: 1px solid rgba(76, 175, 80, 0.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h3 class="mb-0 fw-bold">{{ user.username }}</h3>
+                    {% if user.profile.role != 'user' %}
+                    <span class="role-badge role-{{ user.profile.role }}">
+                        {{ user.profile.role }}
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-muted mb-0">Member since {{ user.date_joined|date:"M Y" }}</p>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                {% for field in form %}
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-muted small fw-bold text-uppercase">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mt-4">
+                <button type="submit" class="btn btn-primary btn-save">
+                    <i class="fas fa-save me-2"></i> Save Changes
+                </button>
+                <a href="{% url 'accounts:password_change' %}" class="btn-password">
+                    <i class="fas fa-key me-2"></i> Change Password
+                </a>
+            </div>
+        </form>
+
+        {% if not user.profile.is_superadmin %}
+        <div class="mt-5 pt-4 border-top border-danger border-opacity-25">
+            <h5 class="text-danger mb-3 fw-bold">Danger Zone</h5>
+            
+            {% if user.deletion_request %}
+                {% if user.deletion_request.is_rejected %}
+                    <div class="alert alert-danger border-danger bg-opacity-10 d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-times-circle me-3"></i>
+                            <div>
+                                <div class="fw-bold">Deletion Request Rejected</div>
+                                <div class="small">An administrator has reviewed and rejected your deletion request.</div>
+                            </div>
+                        </div>
+                        <a href="{% url 'accounts:dismiss_rejection' %}" class="btn btn-sm btn-outline-danger ms-3">Dismiss</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning border-warning bg-opacity-10 d-flex align-items-center">
+                        <i class="fas fa-hourglass-half me-3"></i>
+                        <div>
+                            <div class="fw-bold">Deletion Request Pending</div>
+                            <div class="small">An administrator is reviewing your request. Please wait for approval.</div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p class="text-muted small">Once you request deletion, an administrator must approve it before your account is removed.</p>
+                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                    Request Account Deletion
+                </button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-danger border-opacity-50">
+            <div class="modal-header border-danger border-opacity-25">
+                <h5 class="modal-title text-danger" id="deleteAccountModalLabel">Request Deletion?</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to request account deletion? 
+                   {% if user.profile.role == 'admin' %}
+                   Your request must be approved by a <strong>SuperAdmin</strong>.
+                   {% else %}
+                   Your request must be approved by an <strong>Admin</strong> or <strong>SuperAdmin</strong>.
+                   {% endif %}
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'accounts:delete_account' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Send Deletion Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

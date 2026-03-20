@@ -1,0 +1,222 @@
+<!-- templates/compare.html -->
+{% extends 'base.html' %}
+{% load stock_filters %}
+
+{% block page_title %}
+    <a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
+        <i class="fas fa-chevron-left"></i> Back to Dashboard
+    </a>
+    <span class="ms-1">Compare Stocks</span>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-4">
+        <i class="fas fa-balance-scale me-2"></i>
+        Stock Comparison — Tomorrow's Predictions
+    </h4>
+
+    {% if comparison %}
+    <!-- Returns Bar Chart -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">Predicted Returns (%)</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="compare-returns-chart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-trophy text-warning me-1"></i>
+                        Ranking (Best → Worst)
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for item in comparison %}
+                        <div class="list-group-item bg-transparent d-flex
+                                    justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge rounded-circle"
+                                      style="width:28px; height:28px;
+                                             line-height:28px;
+                                             background: {{ item.stock.color }}">
+                                    {{ forloop.counter }}
+                                </span>
+                                <div>
+                                    <strong>{{ item.stock.symbol }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ item.stock.name }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span style="{{ item.best_return|pct_color }};
+                                             font-weight:700;">
+                                    {{ item.prediction.direction_icon }}
+                                    {{ item.best_return|floatformat:2 }}%
+                                </span>
+                                <br>
+                                {% autoescape off %}
+                                {{ item.confidence|confidence_badge }}
+                                {% endautoescape %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Detailed Comparison</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0
+                                      align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Stock</th>
+                                    <th>Sector</th>
+                                    <th>Today Close</th>
+                                    <th>MMHPA</th>
+                                    <th>GANHPA</th>
+                                    <th>MMGANHPA</th>
+                                    <th>Return %</th>
+                                    <th>Direction</th>
+                                    <th>Confidence</th>
+                                    <th>95% CI</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in comparison %}
+                                <tr>
+                                    <td>
+                                        <span class="stock-dot"
+                                              style="background:{{ item.stock.color }}"></span>
+                                        <strong>{{ item.stock.symbol }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge"
+                                              style="background:{{ item.stock.color }}20;
+                                                     color:{{ item.stock.color }}">
+                                            {{ item.stock.sector }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        ₹{{ item.prediction.today_close|floatformat:2 }}
+                                    </td>
+                                    <td>
+                                        ₹{{ item.prediction.mmhpa_price|floatformat:2 }}
+                                    </td>
+                                    <td>
+                                        ₹{{ item.prediction.ganhpa_price|floatformat:2 }}
+                                    </td>
+                                    <td class="fw-bold">
+                                        ₹{{ item.prediction.mmganhpa_price|floatformat:2 }}
+                                    </td>
+                                    <td style="{{ item.best_return|pct_color }};
+                                               font-weight:700;">
+                                        {{ item.best_return|floatformat:2 }}%
+                                    </td>
+                                    <td style="color:{{ item.prediction.direction_color }}">
+                                        {{ item.prediction.direction_icon }}
+                                        {{ item.direction }}
+                                    </td>
+                                    <td>
+                                        {% autoescape off %}
+                                        {{ item.confidence|confidence_badge }}
+                                        {% endautoescape %}
+                                    </td>
+                                    <td class="font-mono small">
+                                        ₹{{ item.prediction.ci_low|floatformat:0 }}–{{ item.prediction.ci_high|floatformat:0 }}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'predictions:stock_detail' item.stock.symbol %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted">No predictions to compare</h5>
+        <button class="btn btn-primary" onclick="refreshAll()">
+            <i class="fas fa-play me-2"></i> Run All Predictions
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if comparison %}
+<script>
+const chartData = {{ chart_data_json|safe }};
+
+new Chart(document.getElementById('compare-returns-chart'), {
+    type: 'bar',
+    data: {
+        labels: chartData.labels,
+        datasets: [{
+            label: 'Predicted Return (%)',
+            data: chartData.returns,
+            backgroundColor: chartData.colors.map(c => c + '90'),
+            borderColor: chartData.colors,
+            borderWidth: 2,
+            borderRadius: 8,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ctx.parsed.y.toFixed(2) + '%'
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#ccc', font: { weight: 'bold' } },
+                grid: { display: false }
+            },
+            y: {
+                ticks: {
+                    color: '#888',
+                    callback: v => v.toFixed(1) + '%'
+                },
+                grid: { color: 'rgba(255,255,255,0.05)' }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

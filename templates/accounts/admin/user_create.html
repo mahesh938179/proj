@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create User | StockAI Predictor{% endblock %}
+
+{% block page_title %}New Account{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-card {
+        background: rgba(30, 34, 45, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+    }
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        padding: 0.8rem 1rem;
+        border-radius: 10px;
+    }
+    .role-select {
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(0, 188, 212, 0.1) 100%);
+        border: 1px solid rgba(33, 150, 243, 0.2) !important;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="create-card">
+        <div class="text-center mb-4">
+            <div class="icon-circle bg-success bg-opacity-10 text-success mx-auto mb-3" style="width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h3 class="fw-bold">Create User</h3>
+            <p class="text-muted">Register a new user or staff member</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold text-uppercase">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <div class="small text-muted mt-1">{{ field.help_text|safe }}</div>
+                {% endif %}
+                {% if field.errors %}
+                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if user.profile.is_superadmin %}
+            <div class="role-select mb-4">
+                <label class="form-label text-white small fw-bold text-uppercase">Assigned Role</label>
+                <select name="role" class="form-select">
+                    {% for value, label in roles %}
+                    <option value="{{ value }}" {% if value == 'user' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% else %}
+            <!-- Admins can only create regular users -->
+            <input type="hidden" name="role" value="user">
+            {% endif %}
+
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-success w-100 py-3 fw-bold">
+                    <i class="fas fa-check me-2"></i> Create User
+                </button>
+                <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-secondary w-100 py-3 fw-bold">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

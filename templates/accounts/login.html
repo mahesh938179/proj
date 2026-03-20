@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Login | StockAI Predictor{% endblock %}
+
+{% block page_title %}Account Login{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: calc(100vh - 160px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+    .auth-card {
+        background: rgba(30, 34, 45, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 450px;
+        padding: 2.5rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .auth-icon {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 1.8rem;
+        color: white;
+        box-shadow: 0 10px 20px rgba(33, 150, 243, 0.3);
+    }
+    .form-control {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        padding: 0.8rem 1rem;
+        border-radius: 10px;
+    }
+    .form-control:focus {
+        border-color: #2196F3 !important;
+        box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.15) !important;
+    }
+    .btn-auth {
+        background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+        border: none;
+        padding: 0.8rem;
+        border-radius: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    .btn-auth:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+    }
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: #8892b0;
+    }
+    .auth-footer a {
+        color: #2196F3;
+        text-decoration: none;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h3 class="fw-bold mb-1">Welcome Back</h3>
+            <p class="text-muted">Login to access your dashboard</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold text-uppercase">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary btn-auth w-100 mt-3">
+                Log In
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="{% url 'accounts:register' %}">Create account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

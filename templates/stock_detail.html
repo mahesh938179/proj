@@ -1,0 +1,492 @@
+<!-- templates/stock_detail.html -->
+{% extends 'base.html' %}
+{% load stock_filters %}
+
+{% block page_title %}
+    <a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
+        <i class="fas fa-chevron-left"></i> Back to Dashboard
+    </a>
+    <span class="ms-1">Stock Details — {{ stock.symbol }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Stock Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap">
+                        <div>
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <h2 class="mb-0" style="color: {{ config.color }}">
+                                    {{ stock.symbol }}
+                                </h2>
+                                <span class="badge fs-6"
+                                      style="background: {{ config.color }}20;
+                                             color: {{ config.color }}">
+                                    {{ stock.sector }}
+                                </span>
+                                {% if prediction %}
+                                    {% autoescape off %}
+                                    {{ prediction.confidence|confidence_badge }}
+                                    {% endautoescape %}
+                                {% endif %}
+                            </div>
+                            <p class="text-muted mb-0">{{ stock.name }}</p>
+                        </div>
+
+                        <div class="text-end">
+                            {% if prediction %}
+                            <div class="current-price-lg">
+                                ₹{{ prediction.today_close|floatformat:2 }}
+                            </div>
+                            <div class="mt-1">
+                                <span style="color: {{ prediction.direction_color }};
+                                             font-size: 1.1rem; font-weight: 600;">
+                                    {{ prediction.direction_icon }}
+                                    {{ prediction.mmganhpa_return_pct|floatformat:2 }}%
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="mt-3 d-flex gap-2">
+                        <button class="btn btn-primary btn-sm"
+                                onclick="refreshStock('{{ stock.symbol }}')">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Refresh Prediction
+                        </button>
+                        <a href="{% url 'predictions:compare' %}"
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-balance-scale me-1"></i> Compare
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if prediction %}
+    <!-- Prediction Cards Row -->
+    <div class="row mb-4">
+        <!-- MMHPA -->
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card model-card h-100"
+                 style="border-top: 3px solid #1565C0;">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-brain me-1"></i> MMHPA Model
+                    </h6>
+                    <div class="model-price">
+                        ₹{{ prediction.mmhpa_price|floatformat:2 }}
+                    </div>
+                    <div style="{{ prediction.mmhpa_return_pct|pct_color }}">
+                        {% if prediction.mmhpa_return_pct > 0 %}▲{% else %}▼{% endif %}
+                        {{ prediction.mmhpa_return_pct|floatformat:2 }}%
+                    </div>
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">5d Accuracy</small>
+                        <small>{{ model_stats.MMHPA.accuracy }}%</small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Calib Scale</small>
+                        <small class="font-mono">{{ model_stats.MMHPA.calib }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GANHPA -->
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card model-card h-100"
+                 style="border-top: 3px solid #B71C1C;">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-robot me-1"></i> GANHPA Model
+                    </h6>
+                    <div class="model-price">
+                        ₹{{ prediction.ganhpa_price|floatformat:2 }}
+                    </div>
+                    <div style="{{ prediction.ganhpa_return_pct|pct_color }}">
+                        {% if prediction.ganhpa_return_pct > 0 %}▲{% else %}▼{% endif %}
+                        {{ prediction.ganhpa_return_pct|floatformat:2 }}%
+                    </div>
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">5d Accuracy</small>
+                        <small>{{ model_stats.GANHPA.accuracy }}%</small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Calib Scale</small>
+                        <small class="font-mono">{{ model_stats.GANHPA.calib }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MMGANHPA (Best) -->
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card model-card h-100 best-model"
+                 style="border-top: 3px solid #1B5E20;">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-star text-warning me-1"></i>
+                        MMGANHPA (Best)
+                    </h6>
+                    <div class="model-price best">
+                        ₹{{ prediction.mmganhpa_price|floatformat:2 }}
+                    </div>
+                    <div style="{{ prediction.mmganhpa_return_pct|pct_color }};
+                                font-weight:700;">
+                        {% if prediction.mmganhpa_return_pct > 0 %}▲{% else %}▼{% endif %}
+                        {{ prediction.mmganhpa_return_pct|floatformat:2 }}%
+                    </div>
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">5d Accuracy</small>
+                        <small class="fw-bold">
+                            {{ model_stats.MMGANHPA.accuracy }}%
+                        </small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Calib Scale</small>
+                        <small class="font-mono">
+                            {{ model_stats.MMGANHPA.calib }}
+                        </small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">95% CI</small>
+                        <small>
+                            ₹{{ prediction.ci_low|floatformat:0 }} –
+                            ₹{{ prediction.ci_high|floatformat:0 }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Main price chart -->
+        <div class="col-lg-8 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Price History & Prediction
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary active"
+                                onclick="setChartRange(30)">30D</button>
+                        <button class="btn btn-outline-secondary"
+                                onclick="setChartRange(60)">60D</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="main-price-chart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prediction summary -->
+        <div class="col-lg-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Prediction Summary
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-dark mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted">Data Date</td>
+                                <td class="text-end">
+                                    {{ prediction.data_date }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Predicting</td>
+                                <td class="text-end fw-bold">
+                                    {{ prediction.prediction_date }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Today Close</td>
+                                <td class="text-end">
+                                    ₹{{ prediction.today_close|floatformat:2 }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Direction</td>
+                                <td class="text-end"
+                                    style="color:{{ prediction.direction_color }}">
+                                    {{ prediction.direction_icon }}
+                                    {{ prediction.direction }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Confidence</td>
+                                <td class="text-end">
+                                    {% autoescape off %}
+                                    {{ prediction.confidence|confidence_badge }}
+                                    {% endautoescape %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">95% Range</td>
+                                <td class="text-end">
+                                    ₹{{ prediction.ci_low|floatformat:0 }} –
+                                    ₹{{ prediction.ci_high|floatformat:0 }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Daily Std</td>
+                                <td class="text-end font-mono">
+                                    {{ prediction.hist_std|multiply:100|floatformat:2 }}%
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Direction Acc</td>
+                                <td class="text-end fw-bold text-success">
+                                    {{ accuracy_pct }}%
+                                    <small class="text-muted">
+                                        ({{ correct_count }}/{{ total_count }})
+                                    </small>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Past Predictions Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-table me-1"></i>
+                        Recent Predictions
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Pred Date</th>
+                                    <th>Today Close</th>
+                                    <th>MMHPA</th>
+                                    <th>GANHPA</th>
+                                    <th>MMGANHPA</th>
+                                    <th>Direction</th>
+                                    <th>Confidence</th>
+                                    <th>Return %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in past_predictions %}
+                                <tr>
+                                    <td>{{ p.prediction_date }}</td>
+                                    <td>₹{{ p.today_close|floatformat:2 }}</td>
+                                    <td>₹{{ p.mmhpa_price|floatformat:2 }}</td>
+                                    <td>₹{{ p.ganhpa_price|floatformat:2 }}</td>
+                                    <td class="fw-bold">
+                                        ₹{{ p.mmganhpa_price|floatformat:2 }}
+                                    </td>
+                                    <td style="color:{{ p.direction_color }}">
+                                        {{ p.direction_icon }} {{ p.direction }}
+                                    </td>
+                                    <td>
+                                        {% autoescape off %}
+                                        {{ p.confidence|confidence_badge }}
+                                        {% endautoescape %}
+                                    </td>
+                                    <td style="{{ p.mmganhpa_return_pct|pct_color }}">
+                                        {{ p.mmganhpa_return_pct|floatformat:2 }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No prediction yet -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-robot fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No predictions yet for {{ stock.symbol }}</h4>
+                    <p class="text-muted">Run the ML models to generate predictions</p>
+                    <button class="btn btn-primary btn-lg"
+                            onclick="refreshStock('{{ stock.symbol }}')">
+                        <i class="fas fa-play me-2"></i>
+                        Run Prediction
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function refreshStock(symbol) {
+    const data = await apiCall('/api/refresh/' + symbol + '/');
+    if (data && data.status === 'success') {
+        location.reload();
+    }
+}
+
+{% if prediction %}
+// Main price chart
+const histData = {{ history_json|safe }};
+const predOverlay = {{ pred_overlay_json|safe }};
+
+// Prepare aligned data for Chart.js
+function getAlignedData() {
+    let labels = [...histData.dates];
+    let actualCloses = [...histData.closes];
+    let mmganPredictions = new Array(labels.length).fill(null);
+
+    if (predOverlay.dates && predOverlay.dates.length > 0) {
+        let lastIdx = predOverlay.dates.length - 1;
+        let d = predOverlay.dates[lastIdx];
+        let p = predOverlay.mmganhpa[lastIdx];
+
+        if (d > labels[labels.length - 1]) {
+            // Tomorrow's prediction — add a new point beyond history
+            if (actualCloses.length > 0) {
+                mmganPredictions[actualCloses.length - 1] = actualCloses[actualCloses.length - 1];
+            }
+            labels.push(d);
+            actualCloses.push(null);
+            mmganPredictions.push(p);
+        } else {
+            // Prediction date is within or at the end of history —
+            // find matching date index or use the last history point
+            let matchIdx = labels.indexOf(d);
+            if (matchIdx !== -1) {
+                // Bridge: set bridge point one step before
+                if (matchIdx > 0) {
+                    mmganPredictions[matchIdx - 1] = actualCloses[matchIdx - 1];
+                }
+                mmganPredictions[matchIdx] = p;
+            } else {
+                // No exact date match — attach prediction to last known point
+                let li = actualCloses.length - 1;
+                mmganPredictions[li - 1] = actualCloses[li - 1];
+                mmganPredictions[li] = p;
+            }
+        }
+    }
+
+    return { labels, actualCloses, mmganPredictions };
+}
+
+const { labels: initialLabels, actualCloses: initialCloses, mmganPredictions: initialPreds } = getAlignedData();
+
+const ctx = document.getElementById('main-price-chart').getContext('2d');
+const mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: initialLabels,
+        datasets: [
+            {
+                label: 'Actual Close',
+                data: initialCloses,
+                borderColor: '#ffffff',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#ffffff',
+                spanGaps: true
+            },
+            {
+                label: 'MMGANHPA Predicted',
+                data: initialPreds,
+                borderColor: '#00e676',
+                borderWidth: 4,
+                fill: false,
+                tension: 0.3,
+                pointRadius: 6,
+                pointBackgroundColor: '#00e676',
+                pointStyle: 'triangle',
+                spanGaps: true,
+                showLine: true
+            },
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: { color: '#ccc', usePointStyle: true }
+            },
+            tooltip: {
+                backgroundColor: '#1e1e2e',
+                borderColor: '#333',
+                borderWidth: 1,
+                callbacks: {
+                    label: function(ctx) {
+                        if (ctx.parsed.y === null) return '';
+                        return ctx.dataset.label + ': ₹' +
+                               ctx.parsed.y.toFixed(2);
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#888', maxRotation: 45 },
+                grid: { color: 'rgba(255,255,255,0.05)' }
+            },
+            y: {
+                ticks: {
+                    color: '#888',
+                    callback: v => '₹' + v.toFixed(0)
+                },
+                grid: { color: 'rgba(255,255,255,0.05)' }
+            }
+        },
+        interaction: { intersect: false, mode: 'index' },
+    }
+});
+
+function setChartRange(days) {
+    const { labels, actualCloses, mmganPredictions } = getAlignedData();
+    const start = Math.max(0, labels.length - days);
+    
+    mainChart.data.labels = labels.slice(start);
+    mainChart.data.datasets[0].data = actualCloses.slice(start);
+    mainChart.data.datasets[1].data = mmganPredictions.slice(start);
+    mainChart.update();
+    
+    document.querySelectorAll('.btn-group .btn').forEach(b =>
+        b.classList.remove('active')
+    );
+    event.target.classList.add('active');
+}
+{% endif %}
+</script>
+{% endblock %}

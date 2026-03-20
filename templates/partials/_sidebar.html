@@ -1,0 +1,92 @@
+<!-- templates/partials/_sidebar.html -->
+{% load static %}
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <i class="fas fa-chart-line"></i>
+            <span class="logo-text">StockAI</span>
+        </div>
+        <small class="text-muted d-block mt-1">ML Predictor v2</small>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <span class="nav-section-title">MENU</span>
+            <a href="{% url 'predictions:dashboard' %}"
+               class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'predictions:compare' %}"
+               class="nav-link {% if request.resolver_match.url_name == 'compare' %}active{% endif %}">
+                <i class="fas fa-balance-scale"></i>
+                <span>Compare</span>
+            </a>
+            <a href="{% url 'predictions:history' %}"
+               class="nav-link {% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+                <i class="fas fa-history"></i>
+                <span>History</span>
+            </a>
+            <a href="{% url 'predictions:about' %}"
+               class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                <i class="fas fa-info-circle"></i>
+                <span>About</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-section-title">STOCKS</span>
+            {% for stock in all_stocks %}
+            <a href="{% url 'predictions:stock_detail' stock.symbol %}"
+               class="nav-link {% if request.resolver_match.kwargs.symbol == stock.symbol %}active{% endif %}">
+                <span class="stock-dot" style="background:{{ stock.color }}"></span>
+                <span>{{ stock.symbol }}</span>
+                <small class="text-muted ms-auto">{{ stock.sector }}</small>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="nav-section mt-4">
+            <span class="nav-section-title">ACCOUNT</span>
+            {% if user.is_authenticated %}
+            <a href="{% url 'accounts:profile' %}" 
+               class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                <i class="fas fa-user-circle"></i>
+                <span>Profile Settings</span>
+            </a>
+            {% if user.profile.is_admin_or_higher %}
+            <a href="{% url 'accounts:admin_dashboard' %}" 
+               class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %} text-info">
+                <i class="fas fa-user-shield"></i>
+                <span>Admin Panel</span>
+            </a>
+            {% endif %}
+{% else %}
+            <a href="{% url 'accounts:login' %}" 
+               class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </a>
+            <a href="{% url 'accounts:register' %}" 
+               class="nav-link {% if request.resolver_match.url_name == 'register' %}active{% endif %}">
+                <i class="fas fa-user-plus"></i>
+                <span>Register</span>
+            </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- PWA Install Button -->
+    <div id="pwa-install-container" style="display: none; padding: 15px;">
+        <button id="pwa-install-btn" class="btn btn-sm btn-primary w-100 py-2">
+            <i class="fas fa-download me-1"></i> Install App
+        </button>
+    </div>
+
+    <div class="sidebar-footer">
+        <small class="text-muted">
+            <i class="fas fa-clock"></i>
+            <span id="current-time">--:--:--</span>
+        </small>
+    </div>
+</div>

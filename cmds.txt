@@ -1,0 +1,9 @@
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py setup_stocks
+python manage.py generate_token
+python manage.py run_predictions
+python manage.py runserver
+
+for crating superadmin
+python manage.py set_role MAHESH superadmin
