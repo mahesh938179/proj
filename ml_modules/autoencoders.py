@@ -1,9 +1,18 @@
 # predictor/ml_engine/autoencoders.py
+# Keras/TF are optional — only needed for training.
+# For inference, an ONNX session is used instead.
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Dropout, BatchNormalization
 from sklearn.preprocessing import MinMaxScaler
+
+try:
+    import tensorflow as tf
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.layers import Input, Dense, Dropout, BatchNormalization
+    HAS_TF = True
+except ImportError:
+    HAS_TF = False
+    tf = None
+    Model = None
 
 
 class StackedAutoencoder:
@@ -13,9 +22,14 @@ class StackedAutoencoder:
         self.scaler = MinMaxScaler()
         self.autoencoder = None
         self.encoder = None
-        self._build_model()
+        # ONNX inference session (set by load_onnx_encoder, used when encoder is None)
+        self._onnx_sess = None
+        self._onnx_inp_name = None
+        if HAS_TF:
+            self._build_model()
 
     def _build_model(self):
+        """Build Keras model (only used during training)."""
         input_layer = Input(shape=(self.input_dim,))
         encoded = input_layer
 
@@ -41,10 +55,18 @@ class StackedAutoencoder:
             optimizer='adam',
             loss=tf.keras.losses.MeanSquaredError()
         )
-
         self.encoder = Model(input_layer, bottleneck)
 
+    def load_onnx_encoder(self, onnx_path):
+        """Load an ONNX encoder session for inference (no Keras needed)."""
+        import onnxruntime as rt
+        self._onnx_sess = rt.InferenceSession(str(onnx_path))
+        self._onnx_inp_name = self._onnx_sess.get_inputs()[0].name
+
     def fit_transform(self, X, epochs=50, batch_size=32):
+        """Train and encode (requires TensorFlow)."""
+        if not HAS_TF or self.autoencoder is None:
+            raise RuntimeError("TensorFlow/Keras is required for training.")
         X_scaled = self.scaler.fit_transform(X)
         self.autoencoder.fit(
             X_scaled, X_scaled,
@@ -58,5 +80,12 @@ class StackedAutoencoder:
         return encoded_features
 
     def transform(self, X):
-        X_scaled = self.scaler.transform(X)
-        return self.encoder.predict(X_scaled, verbose=0)
+        """Encode features. Uses ONNX session if Keras encoder is None."""
+        X_scaled = self.scaler.transform(X).astype(np.float32)
+        if self._onnx_sess is not None:
+            return self._onnx_sess.run(None, {self._onnx_inp_name: X_scaled})[0]
+        if self.encoder is not None:
+            return self.encoder.predict(X_scaled, verbose=0)
+        raise RuntimeError(
+            "No encoder available. Call load_onnx_encoder() with the ONNX path first."
+        )

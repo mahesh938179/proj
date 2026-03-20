@@ -99,6 +99,13 @@ class StockPredictor:
             ) as f:
                 self.autoencoder = pickle.load(f)
 
+            # Load ONNX encoder (replaces Keras encoder stripped from pkl)
+            ae_onnx = models_dir / 'autoencoder' / f'{self.symbol}_encoder.onnx'
+            if ae_onnx.exists():
+                self.autoencoder.load_onnx_encoder(ae_onnx)
+            else:
+                logger.warning(f'[{self.symbol}] Encoder ONNX not found: {ae_onnx}')
+
             # Feature selector
             self.selector = joblib.load(
                 models_dir / 'selection' / f'{self.symbol}_selector.pkl'

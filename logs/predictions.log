@@ -1,0 +1,25 @@
+[2026-03-20 16:26:25,499] INFO predictions: [TCS] All models loaded successfully (ONNX mode)
+[2026-03-20 16:27:36,475] INFO predictions: [TCS] All models loaded successfully (ONNX mode)
+[2026-03-20 16:27:36,500] INFO predictions: [TCS] Calibration done | 5d accuracy: 74.9%
+[2026-03-20 16:27:36,500] INFO predictions: [TCS] Downloading latest data...
+[2026-03-20 16:27:41,622] INFO predictions: [TCS] Prediction: INR2377.65 (-0.54%) DOWN | HIGH
+[2026-03-20 16:27:41,709] INFO predictions: [WIPRO] All models loaded successfully (ONNX mode)
+[2026-03-20 16:27:41,716] INFO predictions: [WIPRO] Calibration done | 5d accuracy: 74.2%
+[2026-03-20 16:27:41,716] INFO predictions: [WIPRO] Downloading latest data...
+[2026-03-20 16:27:45,641] INFO predictions: [WIPRO] Prediction: INR188.40 (-1.31%) DOWN | HIGH
+[2026-03-20 16:27:45,730] INFO predictions: [TATASTEEL] All models loaded successfully (ONNX mode)
+[2026-03-20 16:27:45,738] INFO predictions: [TATASTEEL] Calibration done | 5d accuracy: 71.8%
+[2026-03-20 16:27:45,738] INFO predictions: [TATASTEEL] Downloading latest data...
+[2026-03-20 16:27:49,100] INFO predictions: [TATASTEEL] Prediction: INR198.88 (+1.07%) UP | HIGH
+[2026-03-20 16:27:49,182] INFO predictions: [MARUTI] All models loaded successfully (ONNX mode)
+[2026-03-20 16:27:49,190] INFO predictions: [MARUTI] Calibration done | 5d accuracy: 65.9%
+[2026-03-20 16:27:49,191] INFO predictions: [MARUTI] Downloading latest data...
+[2026-03-20 16:27:54,779] INFO predictions: [MARUTI] Prediction: INR12601.00 (+0.00%) FLAT | HIGH
+[2026-03-20 16:27:54,863] INFO predictions: [AXISBANK] All models loaded successfully (ONNX mode)
+[2026-03-20 16:27:54,875] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 16:27:54,875] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 16:28:00,011] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 16:28:00,091] INFO predictions: [BHEL] All models loaded successfully (ONNX mode)
+[2026-03-20 16:28:00,099] INFO predictions: [BHEL] Calibration done | 5d accuracy: 56.1%
+[2026-03-20 16:28:00,100] INFO predictions: [BHEL] Downloading latest data...
+[2026-03-20 16:28:04,073] INFO predictions: [BHEL] Prediction: INR261.15 (-0.34%) DOWN | HIGH
