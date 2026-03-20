@@ -3,32 +3,30 @@
 {% load stock_filters %}
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}StockAI Predictor{% endblock %}</title>
 
     <!-- Bootstrap 5 Dark -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-          rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    
+
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#111827">
     <script>
         let deferredPrompt;
-        const installBtn = document.getElementById('pwa-install-btn');
-        const installContainer = document.getElementById('pwa-install-container');
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -38,35 +36,40 @@
             });
         }
 
-        // Capture PWA install prompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Show the install button
+            const installContainer = document.getElementById('pwa-install-container');
             if (installContainer) installContainer.style.display = 'block';
         });
 
-        // Trigger install logic
-        installBtn?.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                if (installContainer) installContainer.style.display = 'none';
-            }
-            deferredPrompt = null;
-        });
-
-        // Hide button if already installed
         window.addEventListener('appinstalled', () => {
+            const installContainer = document.getElementById('pwa-install-container');
             if (installContainer) installContainer.style.display = 'none';
             deferredPrompt = null;
         });
+
+        function triggerPwaInstall() {
+            const installBtn = document.getElementById('pwa-install-btn');
+            installBtn?.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    const installContainer = document.getElementById('pwa-install-container');
+                    if (installContainer) installContainer.style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+        window.addEventListener('DOMContentLoaded', triggerPwaInstall);
     </script>
 
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<!-- ✅ ontouchstart="" fixes touch events in Android/iOS WebView -->
+
+<body ontouchstart="">
     <!-- Sidebar -->
     {% if user.is_authenticated %}
     {% include 'partials/_sidebar.html' %}
@@ -90,20 +93,17 @@
             <div class="d-flex align-items-center gap-3">
                 <!-- Market Status -->
                 {% if market_status %}
-                <span class="badge rounded-pill"
-                      style="background: {{ market_status.color }}20;
+                <span class="badge rounded-pill" style="background: {{ market_status.color }}20;
                              color: {{ market_status.color }};
                              border: 1px solid {{ market_status.color }}40;">
-                    <i class="fas fa-circle fa-xs me-1"
-                       style="color: {{ market_status.color }}"></i>
+                    <i class="fas fa-circle fa-xs me-1" style="color: {{ market_status.color }}"></i>
                     {{ market_status.label }}
                 </span>
                 {% endif %}
 
                 <!-- Refresh All -->
                 {% if user.is_authenticated and user.profile.is_admin_or_higher %}
-                <button class="btn btn-sm btn-outline-primary"
-                        onclick="refreshAll()" id="btn-refresh-all">
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshAll()" id="btn-refresh-all">
                     <i class="fas fa-sync-alt me-1"></i> Refresh All
                 </button>
                 {% endif %}
@@ -119,26 +119,26 @@
                 {% else %}
                 <div class="d-flex gap-2">
                     <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-primary px-3 fw-bold">Login</a>
-                    <a href="{% url 'accounts:register' %}" class="btn btn-sm btn-outline-info px-3 fw-bold">Register</a>
+                    <a href="{% url 'accounts:register' %}"
+                        class="btn btn-sm btn-outline-info px-3 fw-bold">Register</a>
                 </div>
                 {% endif %}
             </div>
         </nav>
 
         <script>
-        async function refreshAll() {
-            const btn = document.getElementById('btn-refresh-all');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Running...';
-
-            const data = await apiCall('/api/predict-all/');
-            if (data && data.status === 'success') {
-                location.reload();
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Refresh All';
+            async function refreshAll() {
+                const btn = document.getElementById('btn-refresh-all');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Running...';
+                const data = await apiCall('/api/predict-all/');
+                if (data && data.status === 'success') {
+                    location.reload();
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Refresh All';
+                }
             }
-        }
         </script>
 
         <!-- Page Content -->
@@ -146,11 +146,9 @@
             {% if messages %}
             <div class="container-fluid">
                 {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
-                     role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close"
-                            data-bs-dismiss="alert"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 {% endfor %}
             </div>
@@ -177,6 +175,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <!-- Custom JS -->
     <script>
         // Global AJAX helpers
@@ -202,24 +201,22 @@
             }
         }
 
-        // Live Price Heartbeat (Only on dashboard)
-        if (document.querySelector('.stock-card')) { // Check for stock cards to ensure it's a dashboard-like page
+        // Live Price Heartbeat
+        if (document.querySelector('.stock-card')) {
             setInterval(async () => {
                 try {
                     const response = await fetch('/api/live-prices/');
                     const data = await response.json();
                     if (data && data.status === 'success') {
                         for (const [symbol, price] of Object.entries(data.prices)) {
-                            // Find all instances of this symbol's price (Cards and Detail page)
                             const priceEls = document.querySelectorAll(`[id="price-${symbol}"], .stock-card[onclick*="${symbol}"] .current-price`);
                             priceEls.forEach(el => {
-                                const newPriceText = `₹${price.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                                const newPriceText = `₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
                                 if (el.innerText.trim() !== newPriceText) {
                                     el.innerText = newPriceText;
                                     el.classList.add('price-pulse-up');
                                     setTimeout(() => el.classList.remove('price-pulse-up'), 3000);
 
-                                    // RECALCULATE RETURN (Dynamic ROI)
                                     const wrapper = el.closest('.stock-card-wrapper');
                                     if (wrapper && wrapper.dataset.targetPrice) {
                                         const target = parseFloat(wrapper.dataset.targetPrice);
@@ -230,8 +227,6 @@
                                             const icon = liveReturn > 0 ? '▲' : (liveReturn < 0 ? '▼' : '▬');
                                             returnEl.innerText = `${icon} ${liveReturn.toFixed(2)}%`;
                                             returnEl.style.color = liveReturn > 0 ? '#00E676' : '#FF1744';
-                                            
-                                            // Animate ROI shift
                                             returnEl.style.transition = 'all 0.5s ease';
                                             returnEl.style.transform = 'scale(1.1)';
                                             setTimeout(() => returnEl.style.transform = 'scale(1)', 500);
@@ -242,14 +237,26 @@
                         }
                     }
                 } catch (e) { console.warn('Pulse failed:', e); }
-            }, 45000); // Pulse every 45s
+            }, 45000);
         }
 
-        // Sidebar toggle
-        document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-            document.querySelector('.sidebar').classList.toggle('collapsed');
-            document.querySelector('.main-content').classList.toggle('expanded');
-        });
+        // ✅ Fixed sidebar toggle — works in Android/iOS WebView
+        document.getElementById('sidebar-toggle')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            if (sidebar) {
+                sidebar.classList.toggle('collapsed');
+                // Force repaint for WebView
+                sidebar.style.display = 'none';
+                sidebar.offsetHeight; // trigger reflow
+                sidebar.style.display = '';
+            }
+            if (mainContent) {
+                mainContent.classList.toggle('expanded');
+            }
+        }, { passive: false });
 
         // Auto-refresh timestamp
         function updateTime() {
@@ -269,4 +276,5 @@
     </script>
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>
