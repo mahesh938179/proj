@@ -4,9 +4,9 @@
 
 {% block page_title %}
     <a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
-        <i class="fas fa-chevron-left"></i> Back to Dashboard
+        <i class="fas fa-chevron-left"></i><span class="back-text ms-1"> Back</span>
     </a>
-    <span class="ms-1">Stock Details — {{ stock.symbol }}</span>
+    <span class="ms-1 page-title-text">{{ stock.symbol }}</span>
 {% endblock %}
 
 {% block content %}
@@ -372,27 +372,22 @@ function getAlignedData() {
         let p = predOverlay.mmganhpa[lastIdx];
 
         if (d > labels[labels.length - 1]) {
-            // Tomorrow's prediction — add a new point beyond history
-            if (actualCloses.length > 0) {
-                mmganPredictions[actualCloses.length - 1] = actualCloses[actualCloses.length - 1];
-            }
+            // Tomorrow's prediction — bridge from last actual close (no extra dot)
+            let lastActualIdx = actualCloses.length - 1;
+            mmganPredictions[lastActualIdx] = actualCloses[lastActualIdx]; // connect
             labels.push(d);
             actualCloses.push(null);
             mmganPredictions.push(p);
         } else {
-            // Prediction date is within or at the end of history —
-            // find matching date index or use the last history point
+            // Prediction date within history
             let matchIdx = labels.indexOf(d);
             if (matchIdx !== -1) {
-                // Bridge: set bridge point one step before
                 if (matchIdx > 0) {
-                    mmganPredictions[matchIdx - 1] = actualCloses[matchIdx - 1];
+                    mmganPredictions[matchIdx - 1] = actualCloses[matchIdx - 1]; // connect
                 }
                 mmganPredictions[matchIdx] = p;
             } else {
-                // No exact date match — attach prediction to last known point
                 let li = actualCloses.length - 1;
-                mmganPredictions[li - 1] = actualCloses[li - 1];
                 mmganPredictions[li] = p;
             }
         }
@@ -414,10 +409,11 @@ const mainChart = new Chart(ctx, {
                 data: initialCloses,
                 borderColor: '#ffffff',
                 backgroundColor: 'rgba(255,255,255,0.05)',
-                borderWidth: 2.5,
+                borderWidth: 2,
                 fill: true,
-                tension: 0.3,
-                pointRadius: 3,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 4,
                 pointBackgroundColor: '#ffffff',
                 spanGaps: true
             },
@@ -425,11 +421,23 @@ const mainChart = new Chart(ctx, {
                 label: 'MMGANHPA Predicted',
                 data: initialPreds,
                 borderColor: '#00e676',
-                borderWidth: 4,
+                borderWidth: 3,
                 fill: false,
-                tension: 0.3,
-                pointRadius: 6,
+                tension: 0.4,
+                pointRadius: function(ctx) {
+                    const data = ctx.dataset.data;
+                    const idx  = ctx.dataIndex;
+                    if (data[idx] === null || data[idx] === undefined) return 0;
+                    let last = -1;
+                    for (let i = data.length - 1; i >= 0; i--) {
+                        if (data[i] !== null && data[i] !== undefined) { last = i; break; }
+                    }
+                    return idx === last ? 9 : 0;
+                },
+                pointHoverRadius: 11,
                 pointBackgroundColor: '#00e676',
+                pointBorderColor: '#1a5c2e',
+                pointBorderWidth: 2,
                 pointStyle: 'triangle',
                 spanGaps: true,
                 showLine: true
@@ -458,12 +466,26 @@ const mainChart = new Chart(ctx, {
         },
         scales: {
             x: {
-                ticks: { color: '#888', maxRotation: 45 },
+                ticks: {
+                    color: '#888',
+                    maxRotation: 0,        // ✅ no rotation
+                    minRotation: 0,
+                    maxTicksLimit: 6,      // ✅ max 6 labels — not crowded
+                    callback: function(val, index) {
+                        // Show short date: "Feb 05" instead of "2026-02-05"
+                        const label = this.getLabelForValue(val);
+                        if (!label) return '';
+                        const d = new Date(label);
+                        if (isNaN(d)) return label;
+                        return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
+                    }
+                },
                 grid: { color: 'rgba(255,255,255,0.05)' }
             },
             y: {
                 ticks: {
                     color: '#888',
+                    maxTicksLimit: 6,      // ✅ cleaner y-axis
                     callback: v => '₹' + v.toFixed(0)
                 },
                 grid: { color: 'rgba(255,255,255,0.05)' }

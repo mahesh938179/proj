@@ -4,9 +4,9 @@
 
 {% block page_title %}
     <a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
-        <i class="fas fa-chevron-left"></i> Back to Dashboard
+        <i class="fas fa-chevron-left"></i><span class="back-text ms-1"> Back</span>
     </a>
-    <span class="ms-1">Prediction History</span>
+    <span class="ms-1 page-title-text">History</span>
 {% endblock %}
 
 {% block content %}

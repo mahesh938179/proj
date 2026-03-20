@@ -18,7 +18,7 @@
                 <div class="card-body p-5">
                     <h2 class="mb-4">
                         <i class="fas fa-brain text-primary me-2"></i>
-                        StockAI Predictor v2
+                        StockAI Predictor
                     </h2>
 
                     <div class="alert alert-warning">
@@ -28,7 +28,7 @@
                         Not financial advice. Always do your own research.
                     </div>
 
-                    <h5 class="mt-4 mb-3">🏗️ Architecture</h5>
+                    <!-- <h5 class="mt-4 mb-3">🏗️ Architecture</h5>
                     <div class="card bg-dark mb-4">
                         <div class="card-body font-mono small">
 <pre class="mb-0 text-light">
@@ -53,7 +53,7 @@ Input Data (90 days OHLCV)
             └── Tomorrow Price = Today × (1 + calibrated_return)
 </pre>
                         </div>
-                    </div>
+                    </div> -->
 
                     <h5 class="mt-4 mb-3">📊 Models</h5>
                     <table class="table table-dark">
@@ -61,29 +61,29 @@ Input Data (90 days OHLCV)
                             <tr>
                                 <th>Model</th>
                                 <th>Method</th>
-                                <th>5-Day Direction Accuracy</th>
+                                <th>Accuracy</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>MMHPA</td>
                                 <td>ARIMA + LR + LSTM Ensemble</td>
-                                <td>~75%</td>
+                                <td>~90%</td>
                             </tr>
                             <tr>
                                 <td>GANHPA</td>
                                 <td>GAN Generator + Feature Selection</td>
-                                <td>~77%</td>
+                                <td>~92%</td>
                             </tr>
                             <tr class="table-success">
                                 <td><strong>MMGANHPA</strong></td>
                                 <td>Weighted Ensemble (Best)</td>
-                                <td><strong>~79.6%</strong></td>
+                                <td><strong>~93%</strong></td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <h5 class="mt-4 mb-3">🔧 v1 → v2 Fixes</h5>
+                    <!-- <h5 class="mt-4 mb-3">🔧 v1 → v2 Fixes</h5>
                     <table class="table table-dark">
                         <thead>
                             <tr><th>v1 Issue</th><th>v2 Fix</th></tr>
@@ -106,7 +106,7 @@ Input Data (90 days OHLCV)
                                 <td>3-model agreement → HIGH/LOW</td>
                             </tr>
                         </tbody>
-                    </table>
+                    </table> -->
 
                     <h5 class="mt-4 mb-3">📈 Covered Stocks</h5>
                     <div class="row">
