@@ -8,76 +8,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}StockAI Predictor{% endblock %}</title>
-
-    <!-- Bootstrap 5 Dark -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
-    <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#111827">
-    <script>
-        let deferredPrompt;
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('SW Registered'))
-                    .catch(err => console.log('SW Error: ', err));
-            });
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const installContainer = document.getElementById('pwa-install-container');
-            if (installContainer) installContainer.style.display = 'block';
-        });
-
-        window.addEventListener('appinstalled', () => {
-            const installContainer = document.getElementById('pwa-install-container');
-            if (installContainer) installContainer.style.display = 'none';
-            deferredPrompt = null;
-        });
-
-        function triggerPwaInstall() {
-            const installBtn = document.getElementById('pwa-install-btn');
-            installBtn?.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    const installContainer = document.getElementById('pwa-install-container');
-                    if (installContainer) installContainer.style.display = 'none';
-                }
-                deferredPrompt = null;
-            });
-        }
-        window.addEventListener('DOMContentLoaded', triggerPwaInstall);
-    </script>
-
     {% block extra_css %}{% endblock %}
 </head>
-<!-- ✅ ontouchstart="" fixes touch events in Android/iOS WebView -->
 
 <body ontouchstart="">
-    <!-- Sidebar -->
+
+    <!-- ✅ Mobile overlay — click చేస్తే sidebar close అవుతుంది -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     {% if user.is_authenticated %}
     {% include 'partials/_sidebar.html' %}
     {% endif %}
 
-    <!-- Main Content -->
     <div class="main-content {% if not user.is_authenticated %}no-sidebar{% endif %}">
-        <!-- Top Navbar -->
         <nav class="top-navbar">
             <div class="d-flex align-items-center">
                 {% if user.is_authenticated %}
@@ -85,30 +37,24 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 {% endif %}
-                <h5 class="mb-0 page-title">
-                    {% block page_title %}Dashboard{% endblock %}
-                </h5>
+                <h5 class="mb-0 page-title">{% block page_title %}Dashboard{% endblock %}</h5>
             </div>
 
             <div class="d-flex align-items-center gap-3">
-                <!-- Market Status -->
                 {% if market_status %}
-                <span class="badge rounded-pill" style="background: {{ market_status.color }}20;
-                             color: {{ market_status.color }};
-                             border: 1px solid {{ market_status.color }}40;">
-                    <i class="fas fa-circle fa-xs me-1" style="color: {{ market_status.color }}"></i>
+                <span class="badge rounded-pill"
+                    style="background:{{ market_status.color }}20;color:{{ market_status.color }};border:1px solid {{ market_status.color }}40;">
+                    <i class="fas fa-circle fa-xs me-1" style="color:{{ market_status.color }}"></i>
                     {{ market_status.label }}
                 </span>
                 {% endif %}
 
-                <!-- Refresh All -->
                 {% if user.is_authenticated and user.profile.is_admin_or_higher %}
                 <button class="btn btn-sm btn-outline-primary" onclick="refreshAll()" id="btn-refresh-all">
                     <i class="fas fa-sync-alt me-1"></i> Refresh All
                 </button>
                 {% endif %}
 
-                <!-- Auth Buttons -->
                 {% if user.is_authenticated %}
                 <form action="{% url 'accounts:logout' %}" method="post" class="d-inline">
                     {% csrf_token %}
@@ -126,22 +72,6 @@
             </div>
         </nav>
 
-        <script>
-            async function refreshAll() {
-                const btn = document.getElementById('btn-refresh-all');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Running...';
-                const data = await apiCall('/api/predict-all/');
-                if (data && data.status === 'success') {
-                    location.reload();
-                } else {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Refresh All';
-                }
-            }
-        </script>
-
-        <!-- Page Content -->
         <div class="page-content">
             {% if messages %}
             <div class="container-fluid">
@@ -153,11 +83,9 @@
                 {% endfor %}
             </div>
             {% endif %}
-
             {% block content %}{% endblock %}
         </div>
 
-        <!-- Footer -->
         {% include 'partials/_footer.html' %}
     </div>
 
@@ -167,18 +95,44 @@
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3 text-muted" id="loading-text">
-                Running ML models...
-            </p>
+            <p class="mt-3 text-muted" id="loading-text">Running ML models...</p>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Custom JS -->
     <script>
-        // Global AJAX helpers
+        // ── PWA ──────────────────────────────────────────
+        let deferredPrompt;
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(() => console.log('SW Registered'))
+                    .catch(err => console.log('SW Error:', err));
+            });
+        }
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const c = document.getElementById('pwa-install-container');
+            if (c) c.style.display = 'block';
+        });
+        window.addEventListener('appinstalled', () => {
+            const c = document.getElementById('pwa-install-container');
+            if (c) c.style.display = 'none';
+            deferredPrompt = null;
+        });
+        document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                const c = document.getElementById('pwa-install-container');
+                if (c) c.style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+
+        // ── Global helpers ────────────────────────────────
         function showLoading(text) {
             document.getElementById('loading-text').innerText = text || 'Processing...';
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -186,7 +140,6 @@
         function hideLoading() {
             document.getElementById('loading-overlay').style.display = 'none';
         }
-
         async function apiCall(url) {
             showLoading('Running ML prediction models...');
             try {
@@ -200,8 +153,72 @@
                 return null;
             }
         }
+        async function refreshAll() {
+            const btn = document.getElementById('btn-refresh-all');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Running...';
+            const data = await apiCall('/api/predict-all/');
+            if (data && data.status === 'success') {
+                location.reload();
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Refresh All';
+            }
+        }
 
-        // Live Price Heartbeat
+        // ── ✅ Sidebar toggle — desktop: collapse, mobile: show/hide ──
+        function isMobile() {
+            return window.innerWidth <= 992;
+        }
+
+        function openSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar) return;
+            if (isMobile()) {
+                sidebar.classList.add('show');
+                sidebar.classList.remove('collapsed');
+                if (overlay) overlay.classList.add('active');
+            } else {
+                sidebar.classList.remove('collapsed');
+                document.querySelector('.main-content')?.classList.remove('expanded');
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar) return;
+            if (isMobile()) {
+                sidebar.classList.remove('show');
+                if (overlay) overlay.classList.remove('active');
+            } else {
+                sidebar.classList.add('collapsed');
+                document.querySelector('.main-content')?.classList.add('expanded');
+            }
+        }
+
+        document.getElementById('sidebar-toggle')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return;
+            if (isMobile()) {
+                // Mobile: toggle show class
+                const isOpen = sidebar.classList.contains('show');
+                isOpen ? closeSidebar() : openSidebar();
+            } else {
+                // Desktop: toggle collapsed class
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                isCollapsed ? openSidebar() : closeSidebar();
+            }
+        });
+
+        // Overlay click → close sidebar
+        document.getElementById('sidebar-overlay')?.addEventListener('click', function () {
+            closeSidebar();
+        });
+
+        // ── Live Price Heartbeat ──────────────────────────
         if (document.querySelector('.stock-card')) {
             setInterval(async () => {
                 try {
@@ -216,14 +233,12 @@
                                     el.innerText = newPriceText;
                                     el.classList.add('price-pulse-up');
                                     setTimeout(() => el.classList.remove('price-pulse-up'), 3000);
-
                                     const wrapper = el.closest('.stock-card-wrapper');
                                     if (wrapper && wrapper.dataset.targetPrice) {
                                         const target = parseFloat(wrapper.dataset.targetPrice);
                                         const liveReturn = ((target - price) / price) * 100;
                                         const returnEl = wrapper.querySelector('.predicted-return');
                                         if (returnEl) {
-                                            const trend = liveReturn > 0 ? '+' : '';
                                             const icon = liveReturn > 0 ? '▲' : (liveReturn < 0 ? '▼' : '▬');
                                             returnEl.innerText = `${icon} ${liveReturn.toFixed(2)}%`;
                                             returnEl.style.color = liveReturn > 0 ? '#00E676' : '#FF1744';
@@ -240,34 +255,12 @@
             }, 45000);
         }
 
-        // ✅ Fixed sidebar toggle — works in Android/iOS WebView
-        document.getElementById('sidebar-toggle')?.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.querySelector('.main-content');
-            if (sidebar) {
-                sidebar.classList.toggle('collapsed');
-                // Force repaint for WebView
-                sidebar.style.display = 'none';
-                sidebar.offsetHeight; // trigger reflow
-                sidebar.style.display = '';
-            }
-            if (mainContent) {
-                mainContent.classList.toggle('expanded');
-            }
-        }, { passive: false });
-
-        // Auto-refresh timestamp
+        // ── Auto-refresh timestamp ────────────────────────
         function updateTime() {
             const el = document.getElementById('current-time');
             if (el) {
-                const now = new Date();
-                el.textContent = now.toLocaleTimeString('en-IN', {
-                    hour12: true,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
+                el.textContent = new Date().toLocaleTimeString('en-IN', {
+                    hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit'
                 });
             }
         }
