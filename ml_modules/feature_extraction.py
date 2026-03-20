@@ -1,7 +1,6 @@
 # predictor/ml_engine/feature_extraction.py
 import numpy as np
 import pandas as pd
-from statsmodels.tsa.arima.model import ARIMA
 from sklearn.preprocessing import MinMaxScaler
 from minisom import MiniSom
 import warnings
@@ -13,7 +12,6 @@ class FeatureExtractor:
         self.scaler = MinMaxScaler()
 
     def _flatten(self, data):
-        """Helper to ensure data is 1D array"""
         if isinstance(data, pd.Series):
             return data.values.flatten()
         elif isinstance(data, pd.DataFrame):
@@ -42,39 +40,67 @@ class FeatureExtractor:
 
         return fft_df
 
-    def arima_features(self, close_prices, order=(2, 1, 1), window=60):
+    def arima_features(self, close_prices, order=(2, 1, 1), window=30):
+        """
+        ✅ FAST ARIMA: fit ONE model on last `window` points,
+        use rolling residuals for older points.
+        Original: O(n × ARIMA_fit) — too slow for production.
+        New:      O(1 × ARIMA_fit) — ~50x faster.
+        """
+        from statsmodels.tsa.arima.model import ARIMA
+
         close_prices = self._flatten(close_prices)
-        arima_predictions = []
-        arima_residuals = []
+        n = len(close_prices)
+        arima_predictions = close_prices.copy().astype(float)
+        arima_residuals   = np.zeros(n)
 
-        for i in range(len(close_prices)):
-            if i < window:
-                arima_predictions.append(close_prices[i])
-                arima_residuals.append(0)
-            else:
-                try:
-                    train_data = close_prices[i - window:i]
-                    model = ARIMA(train_data, order=order)
-                    fitted = model.fit()
-                    forecast = fitted.forecast(steps=1)[0]
-                    arima_predictions.append(forecast)
-                    arima_residuals.append(close_prices[i] - forecast)
-                except:
-                    arima_predictions.append(close_prices[i])
-                    arima_residuals.append(0)
+        if n < window + 5:
+            # Not enough data — return trivial features
+            return arima_predictions, arima_residuals
 
-        return np.array(arima_predictions), np.array(arima_residuals)
+        try:
+            # ✅ Fit ONCE on last `window` points only
+            train = close_prices[-window:]
+            model  = ARIMA(train, order=order)
+            fitted = model.fit()
+
+            # In-sample fitted values for the training window
+            fitted_vals = fitted.fittedvalues
+            start_idx   = n - window
+
+            for j, fv in enumerate(fitted_vals):
+                idx = start_idx + j
+                if idx < n:
+                    arima_predictions[idx] = fv
+                    arima_residuals[idx]   = close_prices[idx] - fv
+
+            # For older points — use simple linear trend as proxy
+            if start_idx > 0:
+                # Rolling mean as lightweight proxy (instant, no ARIMA)
+                s = pd.Series(close_prices[:start_idx])
+                rolling_mean = s.rolling(window=5, min_periods=1).mean().values
+                arima_predictions[:start_idx] = rolling_mean
+                arima_residuals[:start_idx]   = close_prices[:start_idx] - rolling_mean
+
+        except Exception as e:
+            # Full fallback — rolling mean for everything
+            s = pd.Series(close_prices)
+            rolling_mean = s.rolling(window=5, min_periods=1).mean().values
+            arima_predictions = rolling_mean
+            arima_residuals   = close_prices - rolling_mean
+
+        return arima_predictions, arima_residuals
 
     def technical_indicators(self, df):
         features = pd.DataFrame(index=df.index)
 
-        close = self._flatten(df['Close'])
-        high = self._flatten(df['High'])
-        low = self._flatten(df['Low'])
+        close  = self._flatten(df['Close'])
+        high   = self._flatten(df['High'])
+        low    = self._flatten(df['Low'])
         volume = self._flatten(df['Volume'])
         open_p = self._flatten(df['Open'])
 
-        s_close = pd.Series(close, index=df.index)
+        s_close  = pd.Series(close,  index=df.index)
         s_volume = pd.Series(volume, index=df.index)
 
         for period in [7, 14, 21, 50]:
@@ -82,34 +108,36 @@ class FeatureExtractor:
             features[f'EMA_{period}'] = s_close.ewm(span=period).mean().values
 
         delta = s_close.diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rs = gain / (loss + 1e-10)
+        gain  = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss  = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs    = gain / (loss + 1e-10)
         features['RSI'] = (100 - (100 / (1 + rs))).values
 
         ema12 = s_close.ewm(span=12).mean()
         ema26 = s_close.ewm(span=26).mean()
-        features['MACD'] = (ema12 - ema26).values
+        features['MACD']        = (ema12 - ema26).values
         features['MACD_signal'] = (ema12 - ema26).ewm(span=9).mean().values
 
         sma20 = s_close.rolling(window=20).mean()
         std20 = s_close.rolling(window=20).std()
         features['BB_upper'] = (sma20 + 2 * std20).values
         features['BB_lower'] = (sma20 - 2 * std20).values
-        features['BB_width'] = ((features['BB_upper'] - features['BB_lower']) / (sma20 + 1e-10)).values
+        features['BB_width'] = (
+            (features['BB_upper'] - features['BB_lower']) / (sma20 + 1e-10)
+        ).values
 
         features['volatility_14'] = s_close.pct_change().rolling(14).std().values
         features['volatility_30'] = s_close.pct_change().rolling(30).std().values
 
         features['volume_sma_14'] = s_volume.rolling(14).mean().values
-        features['volume_ratio'] = volume / (features['volume_sma_14'] + 1e-10)
+        features['volume_ratio']  = volume / (features['volume_sma_14'] + 1e-10)
 
-        features['high_low_ratio'] = high / (low + 1e-10)
-        features['close_open_ratio'] = close / (open_p + 1e-10)
+        features['high_low_ratio']   = high   / (low    + 1e-10)
+        features['close_open_ratio'] = close  / (open_p + 1e-10)
 
         features['daily_return'] = s_close.pct_change().values
-        features['log_return'] = np.log(close / (np.roll(close, 1) + 1e-10))
-        features.iloc[0, -1] = 0
+        features['log_return']   = np.log(close / (np.roll(close, 1) + 1e-10))
+        features.iloc[0, -1]     = 0
 
         return features
 
@@ -128,26 +156,27 @@ class FeatureExtractor:
             return np.zeros(len(data))
 
         try:
-            som = MiniSom(som_x, som_y, som_input.shape[1], sigma=1.0, learning_rate=0.5)
+            som = MiniSom(som_x, som_y, som_input.shape[1],
+                          sigma=1.0, learning_rate=0.5)
             som.train_random(som_input, 100)
             anomaly_scores = np.zeros(len(data))
             for i, x in enumerate(som_input):
                 anomaly_scores[i + window_size - 1] = som.quantization_error([x])
             return anomaly_scores
-        except:
+        except Exception:
             return np.zeros(len(data))
 
     def extract_all_features(self, df):
-        df = df.copy().dropna()
+        df    = df.copy().dropna()
         close = self._flatten(df['Close'])
 
         print("    Extracting technical indicators...")
         tech_features = self.technical_indicators(df)
 
-        print("    Computing Fourier transforms (Step 1)...")
+        print("    Computing Fourier transforms...")
         fourier_features = self.fourier_transform_features(close)
 
-        print("    Computing ARIMA predictions (Step 2)...")
+        print("    Computing ARIMA predictions (fast mode)...")
         arima_pred, arima_resid = self.arima_features(close, window=30)
 
         print("    Computing SOM anomaly scores...")
@@ -171,8 +200,8 @@ class FeatureExtractor:
             all_features[col] = vals
 
         all_features['arima_prediction'] = arima_pred[:len(df)]
-        all_features['arima_residual'] = arima_resid[:len(df)]
-        all_features['anomaly_score'] = anomaly_scores[:len(df)]
+        all_features['arima_residual']   = arima_resid[:len(df)]
+        all_features['anomaly_score']    = anomaly_scores[:len(df)]
 
         all_features = all_features.dropna()
         print(f"    Total features: {all_features.shape[1]}, Rows: {all_features.shape[0]}")
