@@ -23,3 +23,108 @@
 [2026-03-20 16:28:00,099] INFO predictions: [BHEL] Calibration done | 5d accuracy: 56.1%
 [2026-03-20 16:28:00,100] INFO predictions: [BHEL] Downloading latest data...
 [2026-03-20 16:28:04,073] INFO predictions: [BHEL] Prediction: INR261.15 (-0.34%) DOWN | HIGH
+[2026-03-20 18:25:17,135] INFO predictions: [TCS] All models loaded successfully (ONNX mode)
+[2026-03-20 18:25:17,156] INFO predictions: [TCS] Calibration done | 5d accuracy: 74.9%
+[2026-03-20 18:25:17,156] INFO predictions: [TCS] Downloading latest data...
+[2026-03-20 18:25:17,656] INFO predictions: [TCS] yfinance download OK (90 rows)
+[2026-03-20 18:25:18,170] INFO predictions: [TCS] Prediction: INR2377.65 (-0.54%) DOWN | HIGH
+[2026-03-20 18:25:18,239] INFO predictions: [WIPRO] All models loaded successfully (ONNX mode)
+[2026-03-20 18:25:18,302] INFO predictions: [WIPRO] Calibration done | 5d accuracy: 74.2%
+[2026-03-20 18:25:18,302] INFO predictions: [WIPRO] Downloading latest data...
+[2026-03-20 18:25:18,543] INFO predictions: [WIPRO] yfinance download OK (90 rows)
+[2026-03-20 18:25:18,795] INFO predictions: [WIPRO] Prediction: INR188.48 (-1.27%) DOWN | HIGH
+[2026-03-20 18:25:18,893] INFO predictions: [TATASTEEL] All models loaded successfully (ONNX mode)
+[2026-03-20 18:25:18,927] INFO predictions: [TATASTEEL] Calibration done | 5d accuracy: 71.8%
+[2026-03-20 18:25:18,935] INFO predictions: [TATASTEEL] Downloading latest data...
+[2026-03-20 18:25:19,146] INFO predictions: [TATASTEEL] yfinance download OK (90 rows)
+[2026-03-20 18:25:19,312] INFO predictions: [TATASTEEL] Prediction: INR198.80 (+1.03%) UP | HIGH
+[2026-03-20 18:25:19,423] INFO predictions: [MARUTI] All models loaded successfully (ONNX mode)
+[2026-03-20 18:25:19,445] INFO predictions: [MARUTI] Calibration done | 5d accuracy: 65.9%
+[2026-03-20 18:25:19,459] INFO predictions: [MARUTI] Downloading latest data...
+[2026-03-20 18:25:19,656] INFO predictions: [MARUTI] yfinance download OK (90 rows)
+[2026-03-20 18:25:19,926] INFO predictions: [MARUTI] Prediction: INR12601.00 (+0.00%) FLAT | HIGH
+[2026-03-20 18:25:20,023] INFO predictions: [AXISBANK] All models loaded successfully (ONNX mode)
+[2026-03-20 18:25:20,048] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:25:20,050] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:25:20,386] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:25:20,631] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:25:20,717] INFO predictions: [BHEL] All models loaded successfully (ONNX mode)
+[2026-03-20 18:25:20,738] INFO predictions: [BHEL] Calibration done | 5d accuracy: 56.1%
+[2026-03-20 18:25:20,739] INFO predictions: [BHEL] Downloading latest data...
+[2026-03-20 18:25:20,992] INFO predictions: [BHEL] yfinance download OK (90 rows)
+[2026-03-20 18:25:21,187] INFO predictions: [BHEL] Prediction: INR261.15 (-0.34%) DOWN | HIGH
+[2026-03-20 18:25:22,981] INFO predictions: predict_all background task completed
+[2026-03-20 18:25:52,493] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:25:52,494] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:25:53,044] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:25:53,336] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:25:53,722] INFO predictions: [AXISBANK] Background refresh complete
+[2026-03-20 18:28:22,902] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:28:22,905] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:28:23,292] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:28:23,635] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:28:24,050] INFO predictions: [AXISBANK] Background refresh complete
+[2026-03-20 18:30:19,240] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:30:19,241] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:30:19,802] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:30:20,063] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:30:20,515] INFO predictions: [AXISBANK] Background refresh complete
+[2026-03-20 18:35:01,611] INFO predictions: [AXISBANK] All models loaded successfully (ONNX mode)
+[2026-03-20 18:35:01,628] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:35:01,628] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:35:02,970] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:35:03,258] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:35:03,588] INFO predictions: [AXISBANK] Background refresh complete
+[2026-03-20 18:38:19,511] INFO predictions: [AXISBANK] All models loaded successfully (ONNX mode)
+[2026-03-20 18:38:19,525] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:38:19,526] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:38:20,062] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:38:20,303] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:38:20,674] INFO predictions: [AXISBANK] Background refresh complete
+[2026-03-20 18:38:33,663] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:38:33,664] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:38:34,206] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:38:34,619] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:38:35,012] INFO predictions: [AXISBANK] Background refresh complete
+[2026-03-20 18:43:24,777] INFO predictions: [TCS] All models loaded successfully (ONNX mode)
+[2026-03-20 18:43:24,795] INFO predictions: [TCS] Calibration done | 5d accuracy: 74.9%
+[2026-03-20 18:43:24,796] INFO predictions: [TCS] Downloading latest data...
+[2026-03-20 18:43:26,247] INFO predictions: [TCS] yfinance download OK (90 rows)
+[2026-03-20 18:43:26,724] INFO predictions: [TCS] Prediction: INR2377.65 (-0.54%) DOWN | HIGH
+[2026-03-20 18:43:27,097] INFO predictions: predict_all: 1/6 done (TCS)
+[2026-03-20 18:43:27,177] INFO predictions: [WIPRO] All models loaded successfully (ONNX mode)
+[2026-03-20 18:43:27,189] INFO predictions: [WIPRO] Calibration done | 5d accuracy: 74.2%
+[2026-03-20 18:43:27,189] INFO predictions: [WIPRO] Downloading latest data...
+[2026-03-20 18:43:27,478] INFO predictions: [WIPRO] yfinance download OK (90 rows)
+[2026-03-20 18:43:27,755] INFO predictions: [WIPRO] Prediction: INR188.54 (-1.24%) DOWN | HIGH
+[2026-03-20 18:43:28,113] INFO predictions: predict_all: 2/6 done (WIPRO)
+[2026-03-20 18:43:28,183] INFO predictions: [TATASTEEL] All models loaded successfully (ONNX mode)
+[2026-03-20 18:43:28,197] INFO predictions: [TATASTEEL] Calibration done | 5d accuracy: 71.8%
+[2026-03-20 18:43:28,198] INFO predictions: [TATASTEEL] Downloading latest data...
+[2026-03-20 18:43:28,399] INFO predictions: [TATASTEEL] yfinance download OK (90 rows)
+[2026-03-20 18:43:28,600] INFO predictions: [TATASTEEL] Prediction: INR198.56 (+0.91%) UP | HIGH
+[2026-03-20 18:43:28,938] INFO predictions: predict_all: 3/6 done (TATASTEEL)
+[2026-03-20 18:43:28,984] INFO predictions: [MARUTI] All models loaded successfully (ONNX mode)
+[2026-03-20 18:43:29,002] INFO predictions: [MARUTI] Calibration done | 5d accuracy: 65.9%
+[2026-03-20 18:43:29,007] INFO predictions: [MARUTI] Downloading latest data...
+[2026-03-20 18:43:29,305] INFO predictions: [MARUTI] yfinance download OK (90 rows)
+[2026-03-20 18:43:29,540] INFO predictions: [MARUTI] Prediction: INR12601.00 (+0.00%) FLAT | HIGH
+[2026-03-20 18:43:29,857] INFO predictions: predict_all: 4/6 done (MARUTI)
+[2026-03-20 18:43:29,905] INFO predictions: [AXISBANK] All models loaded successfully (ONNX mode)
+[2026-03-20 18:43:29,922] INFO predictions: [AXISBANK] Calibration done | 5d accuracy: 69.8%
+[2026-03-20 18:43:29,925] INFO predictions: [AXISBANK] Downloading latest data...
+[2026-03-20 18:43:30,219] INFO predictions: [AXISBANK] yfinance download OK (90 rows)
+[2026-03-20 18:43:30,468] INFO predictions: [AXISBANK] Prediction: INR1194.81 (-0.76%) DOWN | HIGH
+[2026-03-20 18:43:30,816] INFO predictions: predict_all: 5/6 done (AXISBANK)
+[2026-03-20 18:43:30,875] INFO predictions: [BHEL] All models loaded successfully (ONNX mode)
+[2026-03-20 18:43:30,885] INFO predictions: [BHEL] Calibration done | 5d accuracy: 56.1%
+[2026-03-20 18:43:30,886] INFO predictions: [BHEL] Downloading latest data...
+[2026-03-20 18:43:31,076] INFO predictions: [BHEL] yfinance download OK (90 rows)
+[2026-03-20 18:43:31,299] INFO predictions: [BHEL] Prediction: INR261.15 (-0.34%) DOWN | HIGH
+[2026-03-20 18:43:31,671] INFO predictions: predict_all: 6/6 done (BHEL)
+[2026-03-20 18:43:31,671] INFO predictions: predict_all completed: 6/6 stocks
+[2026-03-20 18:44:23,389] INFO predictions: [TATASTEEL] Calibration done | 5d accuracy: 71.8%
+[2026-03-20 18:44:23,390] INFO predictions: [TATASTEEL] Downloading latest data...
+[2026-03-20 18:44:24,092] INFO predictions: [TATASTEEL] yfinance download OK (90 rows)
+[2026-03-20 18:44:24,333] INFO predictions: [TATASTEEL] Prediction: INR198.51 (+0.88%) UP | HIGH
+[2026-03-20 18:44:24,726] INFO predictions: [TATASTEEL] Background refresh complete

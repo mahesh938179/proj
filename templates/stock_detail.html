@@ -3,10 +3,10 @@
 {% load stock_filters %}
 
 {% block page_title %}
-    <a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
-        <i class="fas fa-chevron-left"></i><span class="back-text ms-1"> Back</span>
-    </a>
-    <span class="ms-1 page-title-text">{{ stock.symbol }}</span>
+<a href="{% url 'predictions:dashboard' %}" class="btn-nav-back">
+    <i class="fas fa-chevron-left"></i><span class="back-text ms-1"> Back</span>
+</a>
+<span class="ms-1 page-title-text">{{ stock.symbol }}</span>
 {% endblock %}
 
 {% block content %}
@@ -22,15 +22,14 @@
                                 <h2 class="mb-0" style="color: {{ config.color }}">
                                     {{ stock.symbol }}
                                 </h2>
-                                <span class="badge fs-6"
-                                      style="background: {{ config.color }}20;
+                                <span class="badge fs-6" style="background: {{ config.color }}20;
                                              color: {{ config.color }}">
                                     {{ stock.sector }}
                                 </span>
                                 {% if prediction %}
-                                    {% autoescape off %}
-                                    {{ prediction.confidence|confidence_badge }}
-                                    {% endautoescape %}
+                                {% autoescape off %}
+                                {{ prediction.confidence|confidence_badge }}
+                                {% endautoescape %}
                                 {% endif %}
                             </div>
                             <p class="text-muted mb-0">{{ stock.name }}</p>
@@ -54,13 +53,11 @@
 
                     <!-- Action buttons -->
                     <div class="mt-3 d-flex gap-2">
-                        <button class="btn btn-primary btn-sm"
-                                onclick="refreshStock('{{ stock.symbol }}')">
+                        <button class="btn btn-primary btn-sm" onclick="refreshStock('{{ stock.symbol }}')">
                             <i class="fas fa-sync-alt me-1"></i>
                             Refresh Prediction
                         </button>
-                        <a href="{% url 'predictions:compare' %}"
-                           class="btn btn-outline-secondary btn-sm">
+                        <a href="{% url 'predictions:compare' %}" class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-balance-scale me-1"></i> Compare
                         </a>
                     </div>
@@ -74,8 +71,7 @@
     <div class="row mb-4">
         <!-- MMHPA -->
         <div class="col-lg-4 col-md-6 mb-3">
-            <div class="card model-card h-100"
-                 style="border-top: 3px solid #1565C0;">
+            <div class="card model-card h-100" style="border-top: 3px solid #1565C0;">
                 <div class="card-body">
                     <h6 class="text-muted mb-3">
                         <i class="fas fa-brain me-1"></i> MMHPA Model
@@ -102,8 +98,7 @@
 
         <!-- GANHPA -->
         <div class="col-lg-4 col-md-6 mb-3">
-            <div class="card model-card h-100"
-                 style="border-top: 3px solid #B71C1C;">
+            <div class="card model-card h-100" style="border-top: 3px solid #B71C1C;">
                 <div class="card-body">
                     <h6 class="text-muted mb-3">
                         <i class="fas fa-robot me-1"></i> GANHPA Model
@@ -130,8 +125,7 @@
 
         <!-- MMGANHPA (Best) -->
         <div class="col-lg-4 col-md-6 mb-3">
-            <div class="card model-card h-100 best-model"
-                 style="border-top: 3px solid #1B5E20;">
+            <div class="card model-card h-100 best-model" style="border-top: 3px solid #1B5E20;">
                 <div class="card-body">
                     <h6 class="text-muted mb-3">
                         <i class="fas fa-star text-warning me-1"></i>
@@ -181,10 +175,8 @@
                         Price History & Prediction
                     </h6>
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary active"
-                                onclick="setChartRange(30)">30D</button>
-                        <button class="btn btn-outline-secondary"
-                                onclick="setChartRange(60)">60D</button>
+                        <button class="btn btn-outline-secondary active" onclick="setChartRange(30)">30D</button>
+                        <button class="btn btn-outline-secondary" onclick="setChartRange(60)">60D</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -225,8 +217,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">Direction</td>
-                                <td class="text-end"
-                                    style="color:{{ prediction.direction_color }}">
+                                <td class="text-end" style="color:{{ prediction.direction_color }}">
                                     {{ prediction.direction_icon }}
                                     {{ prediction.direction }}
                                 </td>
@@ -333,8 +324,7 @@
                     <i class="fas fa-robot fa-4x text-muted mb-3"></i>
                     <h4 class="text-muted">No predictions yet for {{ stock.symbol }}</h4>
                     <p class="text-muted">Run the ML models to generate predictions</p>
-                    <button class="btn btn-primary btn-lg"
-                            onclick="refreshStock('{{ stock.symbol }}')">
+                    <button class="btn btn-primary btn-lg" onclick="refreshStock('{{ stock.symbol }}')">
                         <i class="fas fa-play me-2"></i>
                         Run Prediction
                     </button>
@@ -348,167 +338,165 @@
 
 {% block extra_js %}
 <script>
-async function refreshStock(symbol) {
-    const data = await apiCall('/api/refresh/' + symbol + '/');
-    if (data && data.status === 'success') {
-        location.reload();
+    async function refreshStock(symbol) {
+        // ✅ Use persistent loading with polling
+        refreshStockWithLoading(symbol);
     }
-}
 
-{% if prediction %}
-// Main price chart
-const histData = {{ history_json|safe }};
-const predOverlay = {{ pred_overlay_json|safe }};
+    {% if prediction %}
+    // Main price chart
+    const histData = {{ history_json| safe }};
+    const predOverlay = {{ pred_overlay_json| safe }};
 
-// Prepare aligned data for Chart.js
-function getAlignedData() {
-    let labels = [...histData.dates];
-    let actualCloses = [...histData.closes];
-    let mmganPredictions = new Array(labels.length).fill(null);
+    // Prepare aligned data for Chart.js
+    function getAlignedData() {
+        let labels = [...histData.dates];
+        let actualCloses = [...histData.closes];
+        let mmganPredictions = new Array(labels.length).fill(null);
 
-    if (predOverlay.dates && predOverlay.dates.length > 0) {
-        let lastIdx = predOverlay.dates.length - 1;
-        let d = predOverlay.dates[lastIdx];
-        let p = predOverlay.mmganhpa[lastIdx];
+        if (predOverlay.dates && predOverlay.dates.length > 0) {
+            let lastIdx = predOverlay.dates.length - 1;
+            let d = predOverlay.dates[lastIdx];
+            let p = predOverlay.mmganhpa[lastIdx];
 
-        if (d > labels[labels.length - 1]) {
-            // Tomorrow's prediction — bridge from last actual close (no extra dot)
-            let lastActualIdx = actualCloses.length - 1;
-            mmganPredictions[lastActualIdx] = actualCloses[lastActualIdx]; // connect
-            labels.push(d);
-            actualCloses.push(null);
-            mmganPredictions.push(p);
-        } else {
-            // Prediction date within history
-            let matchIdx = labels.indexOf(d);
-            if (matchIdx !== -1) {
-                if (matchIdx > 0) {
-                    mmganPredictions[matchIdx - 1] = actualCloses[matchIdx - 1]; // connect
-                }
-                mmganPredictions[matchIdx] = p;
+            if (d > labels[labels.length - 1]) {
+                // Tomorrow's prediction — bridge from last actual close (no extra dot)
+                let lastActualIdx = actualCloses.length - 1;
+                mmganPredictions[lastActualIdx] = actualCloses[lastActualIdx]; // connect
+                labels.push(d);
+                actualCloses.push(null);
+                mmganPredictions.push(p);
             } else {
-                let li = actualCloses.length - 1;
-                mmganPredictions[li] = p;
+                // Prediction date within history
+                let matchIdx = labels.indexOf(d);
+                if (matchIdx !== -1) {
+                    if (matchIdx > 0) {
+                        mmganPredictions[matchIdx - 1] = actualCloses[matchIdx - 1]; // connect
+                    }
+                    mmganPredictions[matchIdx] = p;
+                } else {
+                    let li = actualCloses.length - 1;
+                    mmganPredictions[li] = p;
+                }
             }
         }
+
+        return { labels, actualCloses, mmganPredictions };
     }
 
-    return { labels, actualCloses, mmganPredictions };
-}
+    const { labels: initialLabels, actualCloses: initialCloses, mmganPredictions: initialPreds } = getAlignedData();
 
-const { labels: initialLabels, actualCloses: initialCloses, mmganPredictions: initialPreds } = getAlignedData();
-
-const ctx = document.getElementById('main-price-chart').getContext('2d');
-const mainChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: initialLabels,
-        datasets: [
-            {
-                label: 'Actual Close',
-                data: initialCloses,
-                borderColor: '#ffffff',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                pointBackgroundColor: '#ffffff',
-                spanGaps: true
-            },
-            {
-                label: 'MMGANHPA Predicted',
-                data: initialPreds,
-                borderColor: '#00e676',
-                borderWidth: 3,
-                fill: false,
-                tension: 0.4,
-                pointRadius: function(ctx) {
-                    const data = ctx.dataset.data;
-                    const idx  = ctx.dataIndex;
-                    if (data[idx] === null || data[idx] === undefined) return 0;
-                    let last = -1;
-                    for (let i = data.length - 1; i >= 0; i--) {
-                        if (data[i] !== null && data[i] !== undefined) { last = i; break; }
-                    }
-                    return idx === last ? 9 : 0;
+    const ctx = document.getElementById('main-price-chart').getContext('2d');
+    const mainChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: initialLabels,
+            datasets: [
+                {
+                    label: 'Actual Close',
+                    data: initialCloses,
+                    borderColor: '#ffffff',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointBackgroundColor: '#ffffff',
+                    spanGaps: true
                 },
-                pointHoverRadius: 11,
-                pointBackgroundColor: '#00e676',
-                pointBorderColor: '#1a5c2e',
-                pointBorderWidth: 2,
-                pointStyle: 'triangle',
-                spanGaps: true,
-                showLine: true
-            },
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                labels: { color: '#ccc', usePointStyle: true }
-            },
-            tooltip: {
-                backgroundColor: '#1e1e2e',
-                borderColor: '#333',
-                borderWidth: 1,
-                callbacks: {
-                    label: function(ctx) {
-                        if (ctx.parsed.y === null) return '';
-                        return ctx.dataset.label + ': ₹' +
-                               ctx.parsed.y.toFixed(2);
+                {
+                    label: 'MMGANHPA Predicted',
+                    data: initialPreds,
+                    borderColor: '#00e676',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: function (ctx) {
+                        const data = ctx.dataset.data;
+                        const idx = ctx.dataIndex;
+                        if (data[idx] === null || data[idx] === undefined) return 0;
+                        let last = -1;
+                        for (let i = data.length - 1; i >= 0; i--) {
+                            if (data[i] !== null && data[i] !== undefined) { last = i; break; }
+                        }
+                        return idx === last ? 9 : 0;
+                    },
+                    pointHoverRadius: 11,
+                    pointBackgroundColor: '#00e676',
+                    pointBorderColor: '#1a5c2e',
+                    pointBorderWidth: 2,
+                    pointStyle: 'triangle',
+                    spanGaps: true,
+                    showLine: true
+                },
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#ccc', usePointStyle: true }
+                },
+                tooltip: {
+                    backgroundColor: '#1e1e2e',
+                    borderColor: '#333',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function (ctx) {
+                            if (ctx.parsed.y === null) return '';
+                            return ctx.dataset.label + ': ₹' +
+                                ctx.parsed.y.toFixed(2);
+                        }
                     }
                 }
-            }
-        },
-        scales: {
-            x: {
-                ticks: {
-                    color: '#888',
-                    maxRotation: 0,        // ✅ no rotation
-                    minRotation: 0,
-                    maxTicksLimit: 6,      // ✅ max 6 labels — not crowded
-                    callback: function(val, index) {
-                        // Show short date: "Feb 05" instead of "2026-02-05"
-                        const label = this.getLabelForValue(val);
-                        if (!label) return '';
-                        const d = new Date(label);
-                        if (isNaN(d)) return label;
-                        return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
-                    }
-                },
-                grid: { color: 'rgba(255,255,255,0.05)' }
             },
-            y: {
-                ticks: {
-                    color: '#888',
-                    maxTicksLimit: 6,      // ✅ cleaner y-axis
-                    callback: v => '₹' + v.toFixed(0)
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#888',
+                        maxRotation: 0,        // ✅ no rotation
+                        minRotation: 0,
+                        maxTicksLimit: 6,      // ✅ max 6 labels — not crowded
+                        callback: function (val, index) {
+                            // Show short date: "Feb 05" instead of "2026-02-05"
+                            const label = this.getLabelForValue(val);
+                            if (!label) return '';
+                            const d = new Date(label);
+                            if (isNaN(d)) return label;
+                            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+                        }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
                 },
-                grid: { color: 'rgba(255,255,255,0.05)' }
-            }
-        },
-        interaction: { intersect: false, mode: 'index' },
-    }
-});
+                y: {
+                    ticks: {
+                        color: '#888',
+                        maxTicksLimit: 6,      // ✅ cleaner y-axis
+                        callback: v => '₹' + v.toFixed(0)
+                    },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                }
+            },
+            interaction: { intersect: false, mode: 'index' },
+        }
+    });
 
-function setChartRange(days) {
-    const { labels, actualCloses, mmganPredictions } = getAlignedData();
-    const start = Math.max(0, labels.length - days);
-    
-    mainChart.data.labels = labels.slice(start);
-    mainChart.data.datasets[0].data = actualCloses.slice(start);
-    mainChart.data.datasets[1].data = mmganPredictions.slice(start);
-    mainChart.update();
-    
-    document.querySelectorAll('.btn-group .btn').forEach(b =>
-        b.classList.remove('active')
-    );
-    event.target.classList.add('active');
-}
-{% endif %}
+    function setChartRange(days) {
+        const { labels, actualCloses, mmganPredictions } = getAlignedData();
+        const start = Math.max(0, labels.length - days);
+
+        mainChart.data.labels = labels.slice(start);
+        mainChart.data.datasets[0].data = actualCloses.slice(start);
+        mainChart.data.datasets[1].data = mmganPredictions.slice(start);
+        mainChart.update();
+
+        document.querySelectorAll('.btn-group .btn').forEach(b =>
+            b.classList.remove('active')
+        );
+        event.target.classList.add('active');
+    }
+    {% endif %}
 </script>
 {% endblock %}

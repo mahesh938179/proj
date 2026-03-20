@@ -41,4 +41,5 @@ urlpatterns = [
         views.get_live_prices,
         name='api_live_prices',
     ),
+    path('api/predict-status/', views.api_predict_status, name='api_predict_status'),
 ]

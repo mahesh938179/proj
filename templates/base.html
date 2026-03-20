@@ -149,7 +149,10 @@
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                hideLoading();
+                // Only hide loading for non-background calls
+                if (!data || data.status !== 'success' || !url.includes('refresh')) {
+                    hideLoading();
+                }
                 return data;
             } catch (error) {
                 hideLoading();
@@ -157,37 +160,94 @@
                 return null;
             }
         }
+
+        // ✅ Refresh single stock with persistent loading + polling
+        async function refreshStockWithLoading(symbol) {
+            showLoading(`Refreshing ${symbol} prediction...`);
+            try {
+                const response = await fetch(`/api/refresh/${symbol}/`);
+                const data = await response.json();
+                if (data.status === 'success' || data.status === 'running') {
+                    let elapsed = 0;
+                    // ✅ For single stock — just wait fixed time then reload
+                    // Single stock takes ~15-30s max
+                    let stockTimer = 5;
+                    const poll = setInterval(() => {
+                        stockTimer += 5;
+                        showLoading(`Running ${symbol} prediction... (${stockTimer}s)`);
+                        if (stockTimer >= 90) {
+                            clearInterval(poll);
+                            showLoading('Done! Reloading...');
+                            setTimeout(() => location.reload(), 500);
+                        }
+                    }, 5000);
+                    // Also check done flag
+                    const pollDone = setInterval(async () => {
+                        try {
+                            const check = await fetch('/api/predict-status/');
+                            const status = await check.json();
+                            if (status.done) {
+                                clearInterval(poll);
+                                clearInterval(pollDone);
+                                showLoading('Done! Reloading...');
+                                setTimeout(() => location.reload(), 500);
+                            }
+                        } catch (e) { }
+                    }, 5000);
+                } else {
+                    hideLoading();
+                }
+            } catch (e) {
+                hideLoading();
+            }
+        }
         async function refreshAll() {
             const btn = document.getElementById('btn-refresh-all');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="d-none d-lg-inline ms-1">Starting...</span>';
+            showLoading('Starting predictions...');
 
             try {
                 const response = await fetch('/api/predict-all/');
                 const data = await response.json();
 
                 if (data.status === 'success' || data.status === 'running') {
-                    // Background task started — show countdown
-                    let secs = 60;
-                    btn.innerHTML = `<i class="fas fa-clock"></i><span class="d-none d-lg-inline ms-1">~${secs}s</span>`;
-                    const timer = setInterval(() => {
-                        secs--;
-                        btn.innerHTML = `<i class="fas fa-clock"></i><span class="d-none d-lg-inline ms-1">~${secs}s</span>`;
-                        if (secs <= 0) {
-                            clearInterval(timer);
-                            location.reload();
+                    // Poll every 5s — reload as soon as predictions are done
+                    let elapsed = 0;
+                    const maxWait = 120; // max 2 min
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="d-none d-lg-inline ms-1">Running...</span>';
+
+                    const poll = setInterval(async () => {
+                        elapsed += 5;
+                        try {
+                            const check = await fetch('/api/predict-status/');
+                            const status = await check.json();
+                            // Show progress if available
+                            const prog = status.progress ? ` (${status.progress})` : ` (${elapsed}s)`;
+                            showLoading(`Running ML models...${prog}`);
+                            if (status.done || elapsed >= maxWait) {
+                                clearInterval(poll);
+                                showLoading('Predictions done! Reloading...');
+                                setTimeout(() => location.reload(), 800);
+                            }
+                        } catch (e) {
+                            showLoading(`Running ML models... (${elapsed}s)`);
+                            if (elapsed >= maxWait) {
+                                clearInterval(poll);
+                                location.reload();
+                            }
                         }
-                    }, 1000);
+                    }, 5000);
                 } else {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-sync-alt"></i><span class="d-none d-lg-inline ms-1">Refresh All</span>';
-                    alert('Error: ' + (data.message || 'Unknown error'));
                 }
             } catch (e) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-sync-alt"></i><span class="d-none d-lg-inline ms-1">Refresh All</span>';
+                hideLoading();
             }
-            hideLoading();
+            // ✅ Do NOT hideLoading here — stays visible until poll completes
         }
 
         // ── ✅ Sidebar toggle — desktop: collapse, mobile: show/hide ──

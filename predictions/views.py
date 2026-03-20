@@ -421,30 +421,42 @@ def api_predict_all(request):
 
     def _run_all():
         cache.set('predict_all_running', True, timeout=300)
+        completed = 0
+        total = len(settings.STOCK_CONFIG)
         try:
             engine = PredictionEngine()
-            results = engine.predict_all()
-            for symbol, result in results['predictions'].items():
-                _save_prediction(result)
-                # Cache each result
-                timeout_mins = getattr(settings, 'PREDICTION_CACHE_MINUTES', 30)
-                cache.set(f'pred_result_{symbol}', {
-                    'symbol': result['symbol'],
-                    'name': result['name'],
-                    'today_close': result['today_close'],
-                    'prediction_date': str(result['prediction_date']),
-                    'predictions': result['predictions'],
-                    'direction': result['direction'],
-                    'confidence': result['confidence'],
-                    'ci_low': result['ci_low'],
-                    'ci_high': result['ci_high'],
-                }, timeout=timeout_mins * 60)
-            cache.set('predict_all_done', True, timeout=300)
-            logger.info('predict_all background task completed')
+            # ✅ Run per-stock so partial completion still marks done
+            for symbol in settings.STOCK_CONFIG.keys():
+                try:
+                    result = engine.predict(symbol)
+                    _save_prediction(result)
+                    timeout_mins = getattr(settings, 'PREDICTION_CACHE_MINUTES', 30)
+                    cache.set(f'pred_result_{symbol}', {
+                        'symbol': result['symbol'],
+                        'name': result['name'],
+                        'today_close': result['today_close'],
+                        'prediction_date': str(result['prediction_date']),
+                        'predictions': result['predictions'],
+                        'direction': result['direction'],
+                        'confidence': result['confidence'],
+                        'ci_low': result['ci_low'],
+                        'ci_high': result['ci_high'],
+                    }, timeout=timeout_mins * 60)
+                    completed += 1
+                    # ✅ Mark progress after each stock completes
+                    cache.set('predict_all_progress', f'{completed}/{total}', timeout=300)
+                    logger.info(f'predict_all: {completed}/{total} done ({symbol})')
+                except Exception as e:
+                    logger.error(f'predict_all: {symbol} failed: {e}')
+                    completed += 1  # count as done even if failed
+                    cache.set('predict_all_progress', f'{completed}/{total}', timeout=300)
         except Exception as e:
             logger.error(f'predict_all background failed: {e}')
         finally:
+            # ✅ Always mark done — even on error
+            cache.set('predict_all_done', True, timeout=300)
             cache.delete('predict_all_running')
+            logger.info(f'predict_all completed: {completed}/{total} stocks')
 
     thread = threading.Thread(target=_run_all, daemon=True)
     thread.start()
@@ -736,3 +748,24 @@ def _get_market_status():
 # ─── Error views ────────────────────────────────────────
 def error_404(request, exception):
     return render(request, 'errors/404.html', status=404)
+
+
+@require_GET
+def api_predict_status(request):
+    """
+    Lightweight polling endpoint — frontend checks this every 5s
+    to know when background predictions are complete.
+    """
+    from django.core.cache import cache
+    running  = cache.get('predict_all_running', False)
+    done     = cache.get('predict_all_done', False)
+    progress = cache.get('predict_all_progress', '')
+
+    if done:
+        cache.delete('predict_all_done')
+
+    return JsonResponse({
+        'running':  running,
+        'done':     done or (not running),
+        'progress': progress,  # e.g. "3/6"
+    })
