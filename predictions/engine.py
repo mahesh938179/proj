@@ -5,6 +5,7 @@ v2 Fixed: Uses 5-day average return as signal (79.6% direction accuracy).
 
 import os
 import sys
+import time
 import logging
 import pickle
 import warnings
@@ -238,16 +239,34 @@ class StockPredictor:
         self.load_models()
         self.calibrate()
 
-        # Download latest data
+        # Download latest data — with retry + backoff for rate limits
         logger.info(f'[{self.symbol}] Downloading latest data...')
-        try:
-            df = yf.Ticker(self.ticker).history(period='90d')[
-                ['Open', 'High', 'Low', 'Close', 'Volume']
-            ].dropna()
-            df.index = pd.to_datetime(df.index).tz_localize(None)
-        except Exception as e:
-            logger.error(f'[{self.symbol}] Data download failed: {e}')
-            raise
+        df = None
+        last_err = None
+        for attempt in range(1, 4):   # up to 3 attempts
+            try:
+                df = yf.Ticker(self.ticker).history(period='90d')[
+                    ['Open', 'High', 'Low', 'Close', 'Volume']
+                ].dropna()
+                df.index = pd.to_datetime(df.index).tz_localize(None)
+                if len(df) > 0:
+                    break   # success
+                raise ValueError('Empty dataframe returned')
+            except Exception as e:
+                last_err = e
+                err_str = str(e).lower()
+                is_rate_limit = 'rate' in err_str or 'too many' in err_str or '429' in err_str
+                if attempt < 3:
+                    wait = 5 * (2 ** (attempt - 1))   # 5s, 10s
+                    logger.warning(
+                        f'[{self.symbol}] Download attempt {attempt} failed '
+                        f'({"rate limit" if is_rate_limit else "error"}): {e}. '
+                        f'Retrying in {wait}s...'
+                    )
+                    time.sleep(wait)
+                else:
+                    logger.error(f'[{self.symbol}] Data download failed after 3 attempts: {e}')
+                    raise
 
         if len(df) < 30:
             raise ValueError(
@@ -464,13 +483,18 @@ class PredictionEngine:
         return predictor.predict_tomorrow()
 
     def predict_all(self) -> dict:
-        """Run predictions for all configured stocks"""
+        """Run predictions for all configured stocks with delays to avoid rate limiting."""
         from django.conf import settings
 
         results = {}
         errors = {}
+        symbols = list(settings.STOCK_CONFIG.keys())
 
-        for symbol in settings.STOCK_CONFIG:
+        for i, symbol in enumerate(symbols):
+            # Stagger requests — wait 3s between stocks to avoid yfinance rate limits
+            if i > 0:
+                logger.info(f'Waiting 3s before next stock to avoid rate limit...')
+                time.sleep(3)
             try:
                 results[symbol] = self.predict(symbol)
             except Exception as e:

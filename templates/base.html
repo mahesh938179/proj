@@ -95,10 +95,11 @@
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay" style="display:none;">
         <div class="loading-spinner">
-            <div class="spinner-border text-primary" role="status">
+            <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3 text-muted" id="loading-text">Running ML models...</p>
+            <p class="mt-3 mb-0 fw-semibold text-white" id="loading-text">Loading...</p>
+            <p class="text-muted small mt-1">Please wait</p>
         </div>
     </div>
 
@@ -143,8 +144,10 @@
         function hideLoading() {
             document.getElementById('loading-overlay').style.display = 'none';
         }
-        async function apiCall(url) {
-            showLoading('Running ML prediction models...');
+        async function apiCall(url, defaultLoading = true) {
+            if (defaultLoading) {
+                showLoading('Running ML prediction models...');
+            }
             try {
                 const response = await fetch(url);
                 const data = await response.json();
@@ -160,7 +163,9 @@
             const btn = document.getElementById('btn-refresh-all');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Running...';
-            const data = await apiCall('/api/predict-all/');
+            showLoading('Running ML models for all stocks.<br><small class="text-white-50 mt-2 d-block">This takes ~30 seconds to avoid Yahoo Finance rate limits.<br>Please do not close this page.</small>');
+            
+            const data = await apiCall('/api/predict-all/', false); // false = don't override our custom loading text
             if (data && data.status === 'success') {
                 location.reload();
             } else {
@@ -270,6 +275,50 @@
         setInterval(updateTime, 1000);
         updateTime();
     </script>
+
+    <script>
+        // ── Page Navigation & Form Submit Loading ─────────────────
+        // Show loading on ANY link click (except external, #, logout already handled)
+        document.addEventListener('click', function (e) {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            const href = link.getAttribute('href');
+            // Skip: external links, anchors, javascript:, empty
+            if (!href || href.startsWith('#') || href.startsWith('http') ||
+                href.startsWith('javascript') || href.startsWith('mailto')) return;
+            // Skip: links with data-no-loading or the refresh button
+            if (link.dataset.noLoading || link.id === 'btn-refresh-all' || link.closest('#btn-refresh-all')) return;
+            showLoading('Loading...');
+        });
+
+        // Show loading on ANY form submit
+        document.addEventListener('submit', function (e) {
+            const form = e.target;
+            // Detect form type for better message
+            const action = form.action || '';
+            const hasPassword = form.querySelector('input[type="password"]');
+            const isLogout = action.includes('logout');
+
+            if (isLogout) {
+                showLoading('Logging out...');
+            } else if (hasPassword) {
+                showLoading('Signing in...');
+            } else {
+                showLoading('Please wait...');
+            }
+        });
+
+        // Hide loading when page is fully loaded (back button etc)
+        window.addEventListener('pageshow', function () {
+            hideLoading();
+        });
+
+        // Hide loading if page load takes too long (safety net)
+        window.addEventListener('load', function () {
+            hideLoading();
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 
