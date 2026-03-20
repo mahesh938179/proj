@@ -3,7 +3,7 @@ services:
     name: stockai-predictor
     runtime: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn stockpredictor.wsgi:application --timeout 120 --workers 1 --threads 4 --worker-class gthread"
+    startCommand: "gunicorn stockpredictor.wsgi:application --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 4 --worker-class gthread"
     envVars:
       - key: DEBUG
         value: "False"
