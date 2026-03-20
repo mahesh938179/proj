@@ -36,7 +36,10 @@ def _download_with_fallback(ticker_symbol: str, symbol: str, base_dir: Path) -> 
     try:
         ticker = yf.Ticker(ticker_symbol)
         df = ticker.history(period='90d', timeout=10, raise_errors=True)
-        df = df[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
+        # ✅ Flatten MultiIndex columns if present
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        df = df[[c for c in ['Open', 'High', 'Low', 'Close', 'Volume'] if c in df.columns]].dropna()
         df.index = pd.to_datetime(df.index).tz_localize(None)
         if len(df) >= 30:
             logger.info(f'[{symbol}] yfinance download OK ({len(df)} rows)')
@@ -58,7 +61,12 @@ def _download_with_fallback(ticker_symbol: str, symbol: str, base_dir: Path) -> 
             timeout=8,
         )
         if not df.empty and len(df) >= 30:
-            df = df[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
+            # ✅ Fix: yf.download returns MultiIndex columns — flatten them
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            # Keep only OHLCV columns
+            cols_needed = ['Open', 'High', 'Low', 'Close', 'Volume']
+            df = df[[c for c in cols_needed if c in df.columns]].dropna()
             df.index = pd.to_datetime(df.index).tz_localize(None)
             logger.info(f'[{symbol}] yf.download fallback OK ({len(df)} rows)')
             return df
