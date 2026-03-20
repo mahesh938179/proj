@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: stockai-predictor
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn stockpredictor.wsgi:application --timeout 120 --workers 1 --threads 4 --worker-class gthread"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"

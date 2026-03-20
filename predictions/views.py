@@ -362,7 +362,7 @@ def about(request):
 @rate_limit_api
 @require_api_token
 def api_predict(request, symbol):
-    """Run fresh prediction for a stock"""
+    """Run fresh prediction for a stock — with cache"""
     symbol = symbol.upper()
 
     if symbol not in settings.STOCK_CONFIG:
@@ -370,27 +370,33 @@ def api_predict(request, symbol):
             {'error': f'Unknown stock: {symbol}'}, status=404
         )
 
+    from django.core.cache import cache
+    cache_key = f'pred_result_{symbol}'
+    cached = cache.get(cache_key)
+    if cached:
+        logger.info(f'[{symbol}] Returning cached prediction')
+        return JsonResponse({'status': 'success', 'data': cached, 'cached': True})
+
     try:
         engine = PredictionEngine()
         result = engine.predict(symbol)
-
-        # Save to database
         _save_prediction(result)
 
-        return JsonResponse({
-            'status': 'success',
-            'data': {
-                'symbol': result['symbol'],
-                'name': result['name'],
-                'today_close': result['today_close'],
-                'prediction_date': str(result['prediction_date']),
-                'predictions': result['predictions'],
-                'direction': result['direction'],
-                'confidence': result['confidence'],
-                'ci_low': result['ci_low'],
-                'ci_high': result['ci_high'],
-            }
-        })
+        result_dict = {
+            'symbol': result['symbol'],
+            'name': result['name'],
+            'today_close': result['today_close'],
+            'prediction_date': str(result['prediction_date']),
+            'predictions': result['predictions'],
+            'direction': result['direction'],
+            'confidence': result['confidence'],
+            'ci_low': result['ci_low'],
+            'ci_high': result['ci_high'],
+        }
+        timeout_mins = getattr(settings, 'PREDICTION_CACHE_MINUTES', 30)
+        cache.set(cache_key, result_dict, timeout=timeout_mins * 60)
+
+        return JsonResponse({'status': 'success', 'data': result_dict})
     except Exception as e:
         logger.error(f'API prediction failed for {symbol}: {e}')
         return JsonResponse(
@@ -402,23 +408,51 @@ def api_predict(request, symbol):
 @rate_limit_api
 @require_api_token
 def api_predict_all(request):
-    """Run predictions for all stocks"""
-    try:
-        engine = PredictionEngine()
-        results = engine.predict_all()
+    """Run predictions for all stocks — background threading to avoid timeout"""
+    import threading
+    from django.core.cache import cache
 
-        for symbol, result in results['predictions'].items():
-            _save_prediction(result)
-
+    # Check if already running
+    if cache.get('predict_all_running'):
         return JsonResponse({
-            'status': 'success',
-            'predicted': list(results['predictions'].keys()),
-            'errors': results['errors'],
+            'status': 'running',
+            'message': 'Predictions already in progress, please wait...'
         })
-    except Exception as e:
-        return JsonResponse(
-            {'status': 'error', 'message': str(e)}, status=500
-        )
+
+    def _run_all():
+        cache.set('predict_all_running', True, timeout=300)
+        try:
+            engine = PredictionEngine()
+            results = engine.predict_all()
+            for symbol, result in results['predictions'].items():
+                _save_prediction(result)
+                # Cache each result
+                timeout_mins = getattr(settings, 'PREDICTION_CACHE_MINUTES', 30)
+                cache.set(f'pred_result_{symbol}', {
+                    'symbol': result['symbol'],
+                    'name': result['name'],
+                    'today_close': result['today_close'],
+                    'prediction_date': str(result['prediction_date']),
+                    'predictions': result['predictions'],
+                    'direction': result['direction'],
+                    'confidence': result['confidence'],
+                    'ci_low': result['ci_low'],
+                    'ci_high': result['ci_high'],
+                }, timeout=timeout_mins * 60)
+            cache.set('predict_all_done', True, timeout=300)
+            logger.info('predict_all background task completed')
+        except Exception as e:
+            logger.error(f'predict_all background failed: {e}')
+        finally:
+            cache.delete('predict_all_running')
+
+    thread = threading.Thread(target=_run_all, daemon=True)
+    thread.start()
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Predictions started in background. Refresh page in ~60 seconds.',
+    })
 
 
 @require_GET
@@ -520,25 +554,41 @@ def api_stock_data(request, symbol):
 @rate_limit_api
 @require_api_token
 def api_refresh(request, symbol):
-    """Trigger fresh prediction + refresh page data"""
-    symbol = symbol.upper()
+    """Trigger fresh prediction in background — returns immediately"""
+    import threading
+    from django.core.cache import cache
 
+    symbol = symbol.upper()
     if symbol not in settings.STOCK_CONFIG:
         return JsonResponse({'error': 'Unknown stock'}, status=404)
 
-    try:
-        engine = PredictionEngine()
-        result = engine.predict(symbol)
-        _save_prediction(result)
-
+    # Check if already running for this symbol
+    if cache.get(f'refresh_running_{symbol}'):
         return JsonResponse({
-            'status': 'success',
-            'data': _prediction_to_dict(result),
+            'status': 'running',
+            'message': f'{symbol} prediction already in progress...'
         })
-    except Exception as e:
-        return JsonResponse(
-            {'status': 'error', 'message': str(e)}, status=500
-        )
+
+    def _run(sym):
+        cache.set(f'refresh_running_{sym}', True, timeout=180)
+        try:
+            engine = PredictionEngine()
+            result = engine.predict(sym)
+            _save_prediction(result)
+            # Invalidate old cache
+            cache.delete(f'pred_result_{sym}')
+            logger.info(f'[{sym}] Background refresh complete')
+        except Exception as e:
+            logger.error(f'[{sym}] Background refresh failed: {e}')
+        finally:
+            cache.delete(f'refresh_running_{sym}')
+
+    threading.Thread(target=_run, args=(symbol,), daemon=True).start()
+
+    return JsonResponse({
+        'status': 'success',
+        'message': f'{symbol} prediction started. Refresh page in ~60 seconds.',
+    })
 
 
 # ─── Helpers ────────────────────────────────────────────

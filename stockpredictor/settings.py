@@ -174,7 +174,10 @@ STOCK_CONFIG = {
 }
 
 # Cache predictions for N minutes
-PREDICTION_CACHE_MINUTES = 30
+PREDICTION_CACHE_MINUTES = 60  # 1 hour cache
+
+# Gunicorn timeout (seconds) — set in start command too
+GUNICORN_TIMEOUT = 120
 
 LOGGING = {
     'version': 1,

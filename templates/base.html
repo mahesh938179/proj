@@ -144,10 +144,8 @@
         function hideLoading() {
             document.getElementById('loading-overlay').style.display = 'none';
         }
-        async function apiCall(url, defaultLoading = true) {
-            if (defaultLoading) {
-                showLoading('Running ML prediction models...');
-            }
+        async function apiCall(url) {
+            showLoading('Running ML prediction models...');
             try {
                 const response = await fetch(url);
                 const data = await response.json();
@@ -162,16 +160,34 @@
         async function refreshAll() {
             const btn = document.getElementById('btn-refresh-all');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Running...';
-            showLoading('Running ML models for all stocks.<br><small class="text-white-50 mt-2 d-block">This takes ~30 seconds to avoid Yahoo Finance rate limits.<br>Please do not close this page.</small>');
-            
-            const data = await apiCall('/api/predict-all/', false); // false = don't override our custom loading text
-            if (data && data.status === 'success') {
-                location.reload();
-            } else {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="d-none d-lg-inline ms-1">Starting...</span>';
+
+            try {
+                const response = await fetch('/api/predict-all/');
+                const data = await response.json();
+
+                if (data.status === 'success' || data.status === 'running') {
+                    // Background task started — show countdown
+                    let secs = 60;
+                    btn.innerHTML = `<i class="fas fa-clock"></i><span class="d-none d-lg-inline ms-1">~${secs}s</span>`;
+                    const timer = setInterval(() => {
+                        secs--;
+                        btn.innerHTML = `<i class="fas fa-clock"></i><span class="d-none d-lg-inline ms-1">~${secs}s</span>`;
+                        if (secs <= 0) {
+                            clearInterval(timer);
+                            location.reload();
+                        }
+                    }, 1000);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i><span class="d-none d-lg-inline ms-1">Refresh All</span>';
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            } catch (e) {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Refresh All';
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i><span class="d-none d-lg-inline ms-1">Refresh All</span>';
             }
+            hideLoading();
         }
 
         // ── ✅ Sidebar toggle — desktop: collapse, mobile: show/hide ──
@@ -286,8 +302,8 @@
             // Skip: external links, anchors, javascript:, empty
             if (!href || href.startsWith('#') || href.startsWith('http') ||
                 href.startsWith('javascript') || href.startsWith('mailto')) return;
-            // Skip: links with data-no-loading or the refresh button
-            if (link.dataset.noLoading || link.id === 'btn-refresh-all' || link.closest('#btn-refresh-all')) return;
+            // Skip: links with data-no-loading
+            if (link.dataset.noLoading) return;
             showLoading('Loading...');
         });
 
