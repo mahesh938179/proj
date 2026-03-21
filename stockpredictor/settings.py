@@ -21,11 +21,14 @@ INSTALLED_APPS = [
     # Our app
     'predictions.apps.PredictionsConfig',
     'accounts.apps.AccountsConfig',
+    # CORS
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # ✅ CORS — must be before CommonMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -214,3 +217,15 @@ LOGGING = {
 LOGIN_REDIRECT_URL = 'predictions:dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 LOGIN_URL = 'accounts:login'
+
+# ─── CORS — Flutter app access ───────────────────────────
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:63676',
+    'http://localhost:8080',
+    'http://127.0.0.1:63676',
+    'http://127.0.0.1:8080',
+]
+CORS_ALLOW_ALL_ORIGINS = True  # Flutter web dev లో అన్నీ allow
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = ['GET', 'POST', 'OPTIONS']
+CORS_ALLOW_HEADERS = ['content-type', 'x-api-token', 'authorization']
