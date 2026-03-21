@@ -42,4 +42,11 @@ urlpatterns = [
         name='api_live_prices',
     ),
     path('api/predict-status/', views.api_predict_status, name='api_predict_status'),
+    # predictions/urls.py లో ఈ lines add చేయండి:
+
+path('api/flutter/login/', views.api_flutter_login, name='api_flutter_login'),
+path('api/flutter/dashboard/', views.api_flutter_dashboard, name='api_flutter_dashboard'),
+path('api/flutter/stock/<str:symbol>/', views.api_flutter_stock_detail, name='api_flutter_stock_detail'),
+path('api/flutter/live-prices/', views.get_live_prices, name='api_flutter_live'),
+path('api/flutter/refresh/<str:symbol>/', views.api_refresh, name='api_flutter_refresh'),
 ]

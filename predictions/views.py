@@ -769,3 +769,115 @@ def api_predict_status(request):
         'done':     done or (not running),
         'progress': progress,  # e.g. "3/6"
     })
+# predictions/views.py లో ఈ view add చేయండి
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.contrib.auth import authenticate
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def api_flutter_login(request):
+    """Flutter app login endpoint"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    try:
+        data = json.loads(request.body)
+        user = authenticate(
+            username=data.get('username'),
+            password=data.get('password')
+        )
+        if user:
+            from django.contrib.auth import login
+            # Return user info + token
+            return JsonResponse({
+                'status': 'success',
+                'user': {
+                    'username': user.username,
+                    'email': user.email,
+                    'role': user.profile.role,
+                }
+            })
+        return JsonResponse({'status': 'error', 'message': 'Invalid credentials'}, status=401)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@require_GET
+def api_flutter_dashboard(request):
+    """Flutter dashboard — all stocks + predictions"""
+    from .models import Stock, StockPrediction
+    from django.conf import settings
+
+    stocks = Stock.objects.filter(is_active=True)
+    data = []
+
+    for stock in stocks:
+        pred = stock.predictions.order_by('-created_at').first()
+        stock_data = {
+            'symbol': stock.symbol,
+            'name': stock.name,
+            'sector': stock.sector,
+            'color': stock.color,
+            'prediction': None
+        }
+        if pred:
+            stock_data['prediction'] = {
+                'today_close': pred.today_close,
+                'mmganhpa_price': pred.mmganhpa_price,
+                'mmganhpa_return_pct': pred.mmganhpa_return_pct,
+                'direction': pred.direction,
+                'confidence': pred.confidence,
+                'ci_low': pred.ci_low,
+                'ci_high': pred.ci_high,
+                'prediction_date': str(pred.prediction_date),
+            }
+        data.append(stock_data)
+
+    return JsonResponse({'status': 'success', 'stocks': data})
+
+
+@require_GET
+def api_flutter_stock_detail(request, symbol):
+    """Flutter stock detail — prediction + history"""
+    from .models import Stock, StockPrediction, PriceHistory
+
+    symbol = symbol.upper()
+    try:
+        stock = Stock.objects.get(symbol=symbol)
+        pred = stock.predictions.order_by('-created_at').first()
+        history = list(
+            PriceHistory.objects.filter(stock=stock)
+            .order_by('date')
+            .values('date', 'close', 'high', 'low', 'open', 'volume')
+        )
+        # Convert dates to string
+        for h in history:
+            h['date'] = str(h['date'])
+
+        return JsonResponse({
+            'status': 'success',
+            'stock': {
+                'symbol': stock.symbol,
+                'name': stock.name,
+                'sector': stock.sector,
+                'color': stock.color,
+            },
+            'prediction': {
+                'today_close': pred.today_close,
+                'mmhpa_price': pred.mmhpa_price,
+                'ganhpa_price': pred.ganhpa_price,
+                'mmganhpa_price': pred.mmganhpa_price,
+                'mmganhpa_return_pct': pred.mmganhpa_return_pct,
+                'direction': pred.direction,
+                'confidence': pred.confidence,
+                'ci_low': pred.ci_low,
+                'ci_high': pred.ci_high,
+                'prediction_date': str(pred.prediction_date),
+                'hist_std': pred.hist_std,
+            } if pred else None,
+            'history': history[-30:],  # last 30 days
+        })
+    except Stock.DoesNotExist:
+        return JsonResponse({'error': 'Stock not found'}, status=404)
